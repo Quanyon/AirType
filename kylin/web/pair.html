@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TypeBridge 配对</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:640px;margin:32px auto;padding:0 20px;color:#222;line-height:1.7;text-align:center}
+h1{font-size:22px;margin-bottom:6px}
+.sub{color:#666;font-size:14px;margin-bottom:18px}
+#qrbox{display:inline-block;background:#fff;border:1px solid #d8d8d8;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+canvas{display:block}
+#status{margin-top:14px;font-size:14px;color:#185fa5}
+#conn{margin-top:10px;font-size:15px;color:#888}
+#conn.on{color:#17672f}
+.cdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#bbb;margin-right:6px;vertical-align:middle}
+.cdot.on{background:#22ab5f}
+#fallback{margin-top:16px;font-size:13px;color:#666}
+#fallback code{background:#f2f2f2;padding:3px 8px;border-radius:4px;font-family:Consolas,monospace;word-break:break-all;display:inline-block;margin-top:6px}
+#ctrl{margin-top:14px}
+#ctrl button{font-size:13px;padding:6px 14px;margin:0 6px;border:1px solid #c9c9c9;border-radius:8px;background:#fafafa;color:#333;cursor:pointer}
+#ctrl button:hover{background:#f0f0f0}
+#ctrlmsg{font-size:13px;color:#888;margin-left:8px}
+.warn{background:#fff3f0;border:1px solid #f0b8ad;color:#a3341f;border-radius:8px;padding:12px 14px;font-size:13.5px;text-align:left;margin:0 0 18px;line-height:1.6}
+.warn code{background:#fff;padding:2px 6px;border-radius:4px;font-family:Consolas,monospace}
+.tip{color:#888;font-size:13px;margin-top:16px}
+</style>
+</head>
+<body>
+<h1>手机扫码连接</h1>
+<div class="sub">用手机（与电脑同一 WiFi）的微信「扫一扫」或系统相机扫码</div>
+<!--WARN-->
+<div id="qrbox"><canvas id="qr"></canvas></div>
+<div id="status">正在生成二维码…</div>
+<div id="conn"><span id="conndot" class="cdot"></span><span id="conntxt">正在检查连接状态…</span></div>
+<div class="tip" id="addr">电脑当前地址：<b>{{IP}}:{{PORT}}</b>（手机须与电脑连同一个 WiFi/局域网；手机连不上时，多半是这块网卡不对，可在电脑上切换扫码网卡）</div>
+<div id="ctrl">
+  <button id="btndisc" title="立刻断开当前手机；手机需重新输码才能连回">断开当前手机</button>
+  <button id="btnrecode" title="换新的配对码并吊销旧会话；旧设备不重新拿码就连不上">重新配对</button>
+  <button id="btnfolder" title="打开电脑上存放接收图片的文件夹">打开接收文件夹</button>
+  <span id="ctrlmsg"></span>
+</div>
+<div id="fallback">
+  扫码不成功？在手机浏览器地址栏输入：<br>
+  <code>{{URL}}</code>
+</div>
+<div class="tip">配对码：<b>{{CODE}}</b> · 手机端也可以打开上面地址后，直接输入配对码连接</div>
+<div class="tip">打开后页面出现绿点「已连接」，即可在手机上打字或说话，文字直达电脑光标处。</div>
+<script src="/qrcode.js"></script>
+<script>
+var PAIR_URL = "{{URL}}";
+(function () {
+  var statusEl = document.getElementById('status');
+  try {
+    var qr = qrcode(0, 'M');
+    qr.addData(PAIR_URL);
+    qr.make();
+    var count = qr.getModuleCount();
+    var scale = Math.max(4, Math.floor(280 / count));
+    var border = 4;
+    var size = (count + border * 2) * scale;
+    var canvas = document.getElementById('qr');
+    canvas.width = size;
+    canvas.height = size;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#000000';
+    for (var row = 0; row < count; row++) {
+      for (var col = 0; col < count; col++) {
+        if (qr.isDark(row, col)) {
+          ctx.fillRect((col + border) * scale, (row + border) * scale, scale, scale);
+        }
+      }
+    }
+    statusEl.textContent = '二维码已就绪，请用手机扫码';
+  } catch (e) {
+    statusEl.textContent = '二维码生成失败，请使用下方地址手动输入';
+  }
+})();
+// 连接状态轮询：每 2 秒拉一次 /status，同步绿点/灰点；服务端只回答布尔，不回传配对码
+(function () {
+  var MY_CODE = '{{CODE}}';
+  var conn = document.getElementById('conn');
+  var dot = document.getElementById('conndot');
+  var txt = document.getElementById('conntxt');
+  function poll() {
+    var x;
+    try { x = new XMLHttpRequest(); } catch (e) { return; }
+    if (!x || !x.overrideMimeType) { conn.style.display = 'none'; return; }
+    x.open('GET', '/status?c=' + encodeURIComponent(MY_CODE), true);
+    x.timeout = 3000;
+    x.onload = function () {
+      var s = null;
+      try { s = JSON.parse(x.responseText); } catch (e) { }
+      if (!s || typeof s.connected === 'undefined') return;
+      if (s.match === false) { location.reload(); return; }
+      if (s.connected) {
+        dot.className = 'cdot on';
+        txt.textContent = '手机已连接，可以开始输入';
+        conn.className = 'on';
+      } else {
+        dot.className = 'cdot';
+        txt.textContent = '等待手机连接…';
+        conn.className = '';
+      }
+    };
+    x.send();
+  }
+  poll();
+  setInterval(poll, 2000);
+})();
+// 控制按钮：断开当前手机 / 重新配对（服务端会校验页面码并仅限本机）
+(function () {
+  var msg = document.getElementById('ctrlmsg');
+  function ctrl(act, btn) {
+    var x;
+    try { x = new XMLHttpRequest(); } catch (e) { return; }
+    if (!x || !x.overrideMimeType) { msg.textContent = '当前环境不支持'; return; }
+    btn.disabled = true;
+    x.open('GET', '/ctrl?act=' + act + '&c=' + encodeURIComponent('{{CODE}}'), true);
+    x.timeout = 3000;
+    function done(t) { msg.textContent = t; btn.disabled = false; }
+    x.onload = function () {
+      if (x.status === 200) done(act === 'disconnect' ? '已断开' : (act === 'opendir' ? '已打开接收文件夹' : '已重新配对…'));
+      else done('失败：' + (x.responseText || x.status));
+    };
+    x.onerror = x.ontimeout = function () { done('请求失败，请重试'); };
+    try { x.send(); } catch (e) { done('请求失败，请重试'); }
+  }
+  document.getElementById('btndisc').onclick = function () { ctrl('disconnect', this); };
+  document.getElementById('btnrecode').onclick = function () { ctrl('recode', this); };
+  document.getElementById('btnfolder').onclick = function () { ctrl('opendir', this); };
+})();
+</script>
+</body>
+</html>

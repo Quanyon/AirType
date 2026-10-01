@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>TypeBridge</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;height:100dvh;background:#0a0a0a;color:#eaeaea}
+#top{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#161616;border-bottom:1px solid #2a2a2a}
+#dot{width:10px;height:10px;border-radius:50%;background:#555;flex-shrink:0}
+#dot.on{background:#22ab5f}
+#dot.off{background:#d9483b}
+#status{font-size:14px;color:#bbb}
+#fg{font-size:12px;color:#9a9a9a;padding:6px 16px;background:#101010;border-bottom:1px solid #242424;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#box{flex:1;margin:12px 16px;padding:14px;font-size:17px;line-height:1.5;border:1px solid #3a3a3a;border-radius:10px;resize:none;background:#161616;color:#eee}
+#box:focus{outline:none;border-color:#378add}
+#sendrow{display:flex;gap:10px;margin:0 16px 10px}
+#mode{flex:0 0 42%;padding:16px 34px 16px 12px;font-size:15px;color:#ddd;background-color:#1e1e1e;border:1px solid #3a3a3a;border-radius:10px;cursor:pointer;
+  -webkit-appearance:none;appearance:none;
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23aaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center}
+#send{flex:1;padding:16px;font-size:18px;font-weight:500;color:#fff;background:#185fa5;border:none;border-radius:10px;cursor:pointer}
+#send:active{background:#0c447c}
+#send.sent{background:#22ab5f}
+#send.live{background:#22ab5f}
+#autoclear{flex:0 0 auto;padding:16px 10px;font-size:13px;color:#ddd;background:#1e1e1e;border:1px solid #3a3a3a;border-radius:10px;cursor:pointer;white-space:nowrap}
+#autoclear:active{background:#2a2a2a}
+#autoclear.on{background:#22ab5f;color:#fff;border-color:#22ab5f}
+#orig{flex:0.7!important}
+#orig.on{background:#22ab5f;color:#fff;border-color:#22ab5f}
+#ps{flex:0.7!important}
+#ps.on{background:#22ab5f;color:#fff;border-color:#22ab5f}
+#row{display:flex;gap:10px;margin:0 16px calc(12px + env(safe-area-inset-bottom))}
+#row button{flex:1;padding:14px 0;font-size:15px;color:#ddd;background:#1e1e1e;border:1px solid #3a3a3a;border-radius:10px;cursor:pointer}
+#row button:active{background:#2a2a2a}
+#coderow{display:flex;gap:10px;margin:0 16px 10px}
+#codeinput{flex:1;min-width:0;padding:12px;font-size:15px;border:1px solid #3a3a3a;border-radius:10px;background:#1e1e1e;color:#eee}
+#codego{padding:12px 18px;font-size:15px;font-weight:500;color:#fff;background:#185fa5;border:none;border-radius:10px;cursor:pointer}
+#codego:active{background:#0c447c}
+#hint{font-size:12px;color:#8a8a8a;text-align:center;padding:0 16px 8px;line-height:1.5}
+</style>
+</head>
+<body>
+<div id="top"><span id="dot" class="off"></span><span id="status">连接中…</span></div>
+<div id="fg">目标：-</div>
+<div id="coderow" style="display:none">
+<input id="codeinput" placeholder="输入电脑上的配对码（4 位数字）" inputmode="numeric" autocomplete="off">
+<button id="codego">连 接</button>
+</div>
+<textarea id="box" placeholder="点一下这里，再用输入法的麦克风说话或打字" enterkeyhint="send" autocomplete="off"></textarea>
+<div id="sendrow">
+<select id="mode" title="同步方式">
+<option value="manual">手动发送</option>
+<option value="live">实时同步</option>
+</select>
+<button id="autoclear" title="开启后，实时同步停顿 2.5 秒自动清空输入框；关闭时用「清空」按钮手动清">自动清空</button>
+<button id="send">发 送</button>
+</div>
+<div id="row">
+<button id="enter">回车</button>
+<button id="undo">撤回</button>
+<button id="bs">退格</button>
+<button id="plus" title="选一张照片/拍照发到电脑，自动粘贴到电脑当前光标处；上传中再点一次=取消">图片→电脑</button>
+<button id="orig" title="开启后按原图发送，不做压缩">原图</button>
+<button id="ps" title="省电模式：加大实时同步发送间隔，减少 Wi-Fi 唤醒，更省电但上屏稍慢">省电</button>
+<input type="file" id="file" accept="image/*" style="display:none">
+</div>
+<div id="hint">发送后文字出现在电脑光标处 · 撤回=删掉上一次发送的内容</div>
+<script>
+(function(){
+var code = '';
+var m = location.search.match(/[?&]code=([^&]*)/);
+if (m) code = decodeURIComponent(m[1]);
+var dot=document.getElementById('dot'),status=document.getElementById('status'),
+    fg=document.getElementById('fg'),box=document.getElementById('box'),
+    send=document.getElementById('send'),modeSel=document.getElementById('mode'),
+    hint=document.getElementById('hint'),
+    autoclearBtn=document.getElementById('autoclear'),
+    coderow=document.getElementById('coderow'),codeinput=document.getElementById('codeinput'),
+    codego=document.getElementById('codego'),
+    plus=document.getElementById('plus'),fileInput=document.getElementById('file'),
+    origBtn=document.getElementById('orig');
+var ws=null,authed=false,lastLen=0,timer=null,authFail=false;
+var backoff=0,BACKOFF_BASE=2000,BACKOFF_MAX=60000;   // 重连指数退避：0=首连/刚连上
+var mode='manual',lastSent='',syncTimer=null,composing=false,pendingSince=0;
+var hintDefault='',flashTimer=null;
+
+function setSt(on,txt){
+  dot.classList.toggle('on',on);dot.classList.toggle('off',!on);
+  status.textContent=txt;
+}
+
+// 临时提示：2.6 秒后自动恢复当前模式的默认提示
+function flash(t){
+  hint.textContent=t;
+  if(flashTimer){clearTimeout(flashTimer);}
+  flashTimer=setTimeout(function(){hint.textContent=hintDefault;},2600);
+}
+
+function connect(){
+  authed=false;authFail=false;
+  setSt(false,'连接中…');
+  try{ ws=new WebSocket('ws://'+location.host+'/ws'); }
+  catch(e){ setSt(false,'连接失败'); return; }
+  ws.onopen=function(){
+    ws.send(JSON.stringify({type:'hello',code:code}));
+  };
+  ws.onmessage=function(e){
+    var m; try{m=JSON.parse(e.data);}catch(p){return;}
+    if(m.type==='ready'){
+      authed=true;backoff=0;setSt(true,'已连接');
+      if(mode==='live'){ lastSent=box.value; }
+    }
+    else if(m.type==='ack'){ if(m.fg)fg.textContent='目标：'+m.fg; }
+    else if(m.type==='file_done'){
+      // Windows 粘贴是异步的：pasting 表示已落盘、稍后 note 补真实结果；麒麟直接给准确结果
+      var txt=m.pasted?'已粘贴到电脑光标 ✓':(m.pasting?('已保存 ✓ 正在粘贴…'):('已保存到电脑 ✓ '+(m.saved||'')+(m.why?'（'+m.why+'）':'')));
+      flash(txt);
+      if(up){up=null;upLabel();}   // 一次一张，收到本次结果即结束
+    }
+    else if(m.type==='note'){ flash(m.msg||''); }
+    else if(m.type==='error'){
+      var msg=m.msg||'错误';
+      // 确定性拒绝（码失效/被取代）：标记后停止自动重连，改人工输入新码
+      if(msg.indexOf('配对码')>=0||msg.indexOf('取代')>=0){authFail=true;setSt(false,msg);}
+      // 传输类失败：当前任务自动重试一次
+      else if(up&&(msg.indexOf('不完整')>=0||msg.indexOf('超出')>=0)){failOrRetry(up.list[up.i],msg);}
+      else setSt(false,msg);
+    }
+  };
+  ws.onclose=function(){
+    authed=false;
+    if(authFail){
+      coderow.style.display='flex';
+      codeinput.value='';
+      setSt(false,'连接已失效或被电脑断开：输入电脑屏幕上的配对码点「输码连接」，或重新扫码');
+      return;
+    }
+    // 后台暂停：页面不可见时不自动重连，避免反复唤醒 WiFi 射频空耗电；回前台由 visibilitychange 触发
+    if(document.hidden){setSt(false,'已断开，回到前台后重连…');return;}
+    // 指数退避：2s→4s→8s…封顶 60s，替代原来固定 3 秒的硬连（连不上时长期高频重连很耗电）
+    backoff=backoff?Math.min(backoff*2,BACKOFF_MAX):BACKOFF_BASE;
+    setSt(false,'已断开，'+Math.round(backoff/1000)+' 秒后重连…');
+    timer=setTimeout(connect,backoff);
+  };
+  ws.onerror=function(){try{ws.close();}catch(e){}};
+}
+
+function doSend(obj){ if(ws&&ws.readyState===1){ws.send(JSON.stringify(obj));return true;} return false; }
+
+function sendText(){
+  var t=box.value;
+  if(!t){return;}
+  if(doSend({type:'text',text:t})){
+    lastLen=t.replace(/\r?\n/g,'\n').length;
+    box.value='';
+    if(mode==='live'){ lastSent=''; }
+    send.classList.add('sent');
+    setTimeout(function(){send.classList.remove('sent');},300);
+  }
+}
+
+function toArr(s){ return typeof Array.from==='function'?Array.from(s):s.split(''); }
+
+function calcDiff(prev,cur){
+  var a=toArr(prev),b=toArr(cur),L=0,max=Math.min(a.length,b.length);
+  while(L<max&&a[L]===b[L]){L++;}
+  return {back:a.length-L,suffix:b.slice(L).join('')};
+}
+
+function flushSync(){
+  clearTimeout(syncTimer);
+  pendingSince=0;
+  if(mode!=='live'){return;}
+  var cur=box.value;
+  if(cur===lastSent){return;}
+  var d=calcDiff(lastSent,cur);
+  lastSent=cur;
+  if(d.back===0&&!d.suffix){return;}
+  doSend({type:'sync',back:d.back,text:d.suffix});
+  armAutoClear();
+}
+
+// 实时同步的自动清空（默认关）：开启后停顿 2.5 秒没再输入才清空手机输入框。
+// 默认模式是"发送后不自动清、点「清空」按钮清"，避免说话有长停顿的人被提前清屏。
+// 只清手机端，电脑上已经出现的字不动。
+var autoClearOn=false;
+var autoClearTimer=null;
+var AUTO_CLEAR_MS=2500;
+function armAutoClear(){
+  if(mode!=='live'||!autoClearOn){return;}
+  clearTimeout(autoClearTimer);
+  autoClearTimer=setTimeout(function(){
+    if(mode!=='live'||!autoClearOn){return;}
+    box.value='';
+    lastSent='';
+    clearTimeout(syncTimer);
+  },AUTO_CLEAR_MS);
+}
+
+// 同步调度策略（灵敏度优化）：
+// 1) 追加型改动≥6字符（语音整句上屏/粘贴）立即发送，不等待；
+// 2) 小改动（逐字打字）用 100ms 短防抖，防止退格抖动打到电脑上；
+// 3) 最长等待 400ms 兜底：连续输入时至少每 400ms 同步一次，不再"停下来才出字"。
+var SYNC_IMMEDIATE_CHARS=6,SYNC_DEBOUNCE_MS=100,SYNC_MAX_WAIT_MS=400;
+function scheduleSync(){
+  if(mode!=='live'){return;}
+  var cur=box.value;
+  if(cur===lastSent){return;}
+  var now=+(new Date());
+  var d=calcDiff(lastSent,cur);
+  if(d.back===0&&d.suffix.length>=SYNC_IMMEDIATE_CHARS){flushSync();return;}
+  if(pendingSince&&now-pendingSince>=SYNC_MAX_WAIT_MS){flushSync();return;}
+  if(!pendingSince)pendingSince=now;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(flushSync,SYNC_DEBOUNCE_MS);
+  armAutoClear();
+}
+
+function setMode(v){
+  mode=v;
+  if(mode==='live'){
+    lastSent=box.value;
+    send.textContent='清空';
+    send.classList.add('live');
+    hintDefault='实时同步已开，边说边到电脑。说完点「清空」重置输入框；也可点「自动清空」开启停顿 2.5 秒自动清';
+    hint.textContent=hintDefault;
+    armAutoClear();
+  }else{
+    lastSent='';
+    clearTimeout(syncTimer);
+    clearTimeout(autoClearTimer);
+    pendingSince=0;
+    send.textContent='发 送';
+    send.classList.remove('live');
+    hintDefault='发送后文字出现在电脑光标处 · 撤回=删掉上一次发送的内容';
+    hint.textContent=hintDefault;
+  }
+}
+
+modeSel.onchange=function(){ setMode(modeSel.value); };
+
+// 图片→电脑：一次一张 + 大图智能压缩 + 进度/取消/失败重试；元数据 + 256KB 二进制分块 + file_end
+var MAX_FILE=200*1024*1024;
+var origOn=false;
+try{origOn=localStorage.getItem('tb_orig')==='1';}catch(e){}
+origBtn.classList.toggle('on',origOn);
+origBtn.onclick=function(){
+  origOn=!origOn;
+  try{localStorage.setItem('tb_orig',origOn?'1':'0');}catch(e){}
+  origBtn.classList.toggle('on',origOn);
+  flash(origOn?'已切换为原图发送':'已切换为智能压缩（长边≤2048px）');
+};
+// 省电模式（默认关）：加大实时同步的防抖/最长等待/即时发送阈值，减少 Wi-Fi 射频唤醒次数；
+// 代价是字上屏稍慢。只改发送节奏，不影响内容正确性；状态存 localStorage 下次进入自动恢复。
+var psBtn=document.getElementById('ps'),PS=false;
+try{PS=localStorage.getItem('tb_ps')==='1';}catch(e){}
+function applySyncTiming(){
+  if(PS){SYNC_IMMEDIATE_CHARS=12;SYNC_DEBOUNCE_MS=300;SYNC_MAX_WAIT_MS=800;}
+  else{SYNC_IMMEDIATE_CHARS=6;SYNC_DEBOUNCE_MS=100;SYNC_MAX_WAIT_MS=400;}
+}
+psBtn.classList.toggle('on',PS);applySyncTiming();
+psBtn.onclick=function(){
+  PS=!PS;
+  try{localStorage.setItem('tb_ps',PS?'1':'0');}catch(e){}
+  applySyncTiming();
+  psBtn.classList.toggle('on',PS);
+  flash(PS?'省电模式已开：更省电、上屏稍慢':'省电模式已关：恢复灵敏同步');
+};
+var up=null;   // 传输队列 {list:[job],i,cancel}；job={file,name,size,data,retried}
+function upLabel(){ plus.textContent=up?'取消发送':'图片→电脑'; }
+plus.onclick=function(){
+  if(up){    // 上传中再点一次 = 取消本次发送
+    up.cancel=true;
+    if(ws&&ws.readyState===1){doSend({type:'file_cancel'});}
+    up=null;upLabel();
+    flash('已取消发送');
+    return;
+  }
+  if(!authed){flash('尚未连接电脑');return;}
+  fileInput.click();
+};
+fileInput.onchange=function(){
+  var fs=this.files;
+  if(!fs||!fs.length){return;}
+  // FileList 是跟 input 绑定的活对象：先取出 File 引用再清 input，
+  // 否则 value='' 会把刚选的图片同步清空，选图后什么都不会发生
+  var f=fs[0];   // 一次只发一张，取首张
+  this.value=''; // 清掉选择，保证下次选同一张图也能触发 onchange
+  if(f.size>MAX_FILE){flash(f.name+' 超过200MB，已取消');return;}
+  up={list:[{file:f,name:f.name,size:f.size,data:f,retried:false}],i:0,cancel:false};
+  upLabel();
+  prepJob();
+};
+// 非原图且够大（>2MB 或长边>2048）时压成 JPEG，目标应用也更认压缩后的 jpg/png
+function prepJob(){
+  if(!up){return;}
+  if(up.cancel){up=null;upLabel();return;}
+  var job=up.list[up.i];
+  if(origOn||!window.Image||!document.createElement('canvas').getContext||!window.Blob){sendJob(job);return;}
+  var url=URL.createObjectURL(job.file);
+  var img=new Image();
+  img.onload=function(){
+    try{
+      var w=img.width,h=img.height,mx=Math.max(w,h);
+      if(job.size<=2097152&&mx<=2048){URL.revokeObjectURL(url);sendJob(job);return;}
+      if(mx>2048){var s=2048/mx;w=Math.round(w*s);h=Math.round(h*s);}
+      var c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      c.toBlob(function(b){
+        URL.revokeObjectURL(url);
+        if(!b){sendJob(job);return;}
+        job.data=b;job.size=b.size;job.name=job.file.name.replace(/\.[^.]*$/,'')+'.jpg';
+        sendJob(job);
+      },'image/jpeg',0.85);
+    }catch(e){URL.revokeObjectURL(url);sendJob(job);}
+  };
+  img.onerror=function(){URL.revokeObjectURL(url);sendJob(job);};
+  img.src=url;
+}
+function sendJob(job){
+  if(!up||up.cancel){up=null;upLabel();return;}
+  if(!doSend({type:'file',name:job.name,size:job.size,paste:true})){up=null;upLabel();flash('连接已断开');return;}
+  var pos=0,CHUNK=262144;
+  function say(t){if(flashTimer){clearTimeout(flashTimer);}hint.textContent=t;}
+  function pump(){
+    if(!up||up.cancel){up=null;upLabel();return;}
+    if(pos>=job.size){doSend({type:'file_end'});return;}
+    var part=job.data.slice(pos,Math.min(pos+CHUNK,job.size));
+    var r=new FileReader();
+    r.onload=function(){
+      if(!up||up.cancel){up=null;upLabel();return;}
+      if(!ws||ws.readyState!==1){failOrRetry(job,'网络中断');return;}
+      ws.send(r.result);
+      pos+=part.size;
+      say('发送 '+job.name+'（'+Math.floor(pos*100/job.size)+'%）');
+      pump();
+    };
+    r.onerror=function(){up=null;upLabel();flash('读取文件失败');};
+    r.readAsArrayBuffer(part);
+  }
+  say('发送 '+job.name+' 中…');
+  pump();
+}
+// 失败重试：同一张图自动重试一次，再失败就中止并提示
+function failOrRetry(job,why){
+  if(!up){return;}
+  if(!job.retried){
+    job.retried=true;
+    flash(why+'，正在重试…');
+    setTimeout(function(){sendJob(job);},800);
+  }else{
+    up=null;upLabel();
+    flash(why+'，已中止，可重新选图发送');
+  }
+}
+
+autoclearBtn.onclick=function(){
+  autoClearOn=!autoClearOn;
+  autoclearBtn.classList.toggle('on',autoClearOn);
+  clearTimeout(autoClearTimer);
+  if(autoClearOn){ armAutoClear(); }
+};
+
+send.onclick=function(){
+  if(mode==='live'){
+    syncNow();  // 先把防抖里剩下的尾差发完再清，否则最后几个字会被直接清掉
+    box.value='';lastSent='';clearTimeout(syncTimer);clearTimeout(autoClearTimer);pendingSince=0;
+    send.classList.add('sent');
+    setTimeout(function(){send.classList.remove('sent');},300);
+    return;
+  }
+  sendText();
+};
+
+box.addEventListener('compositionstart',function(){composing=true;});
+// 组合上屏瞬间语句已定型，立即同步，不再等防抖
+box.addEventListener('compositionend',function(){composing=false;flushSync();});
+box.addEventListener('input',function(e){
+  if(mode!=='live'){return;}
+  if(e&&e.isComposing){return;}
+  if(composing){return;}
+  scheduleSync();
+});
+box.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&!e.shiftKey&&mode!=='live'){e.preventDefault();sendText();}
+});
+
+document.getElementById('enter').onclick=function(){
+  if(mode==='live'){
+    syncNow();  // 先把未发送的尾差送出去，不能把它们直接标记成已同步
+    if(!ws||!authed){setSt(false,'未连接');return;}
+    doSend({type:'enter'});
+    box.value+='\n';lastSent=box.value;
+    clearTimeout(syncTimer);pendingSince=0;
+    armAutoClear();
+    return;
+  }
+  doSend({type:'enter'});
+};
+document.getElementById('bs').onclick=function(){
+  if(mode==='live'){
+    var a=toArr(box.value),popped=false;
+    if(a.length>0){a.pop();box.value=a.join('');popped=true;}
+    // 未连接时只改输入框不回写 lastSent，避免镜像被假标记成已同步
+    if(!ws||!authed){setSt(false,'未连接');return;}
+    if(popped)lastSent=box.value;
+    clearTimeout(syncTimer);pendingSince=0;
+    doSend({type:'backspace',count:1});
+    armAutoClear();
+    return;
+  }
+  doSend({type:'backspace',count:1});
+};
+document.getElementById('undo').onclick=function(){
+  if(mode==='live'){
+    syncNow();  // 尾差补发后 lastSent 就是电脑全部内容，撤回才能算对次数
+    var n=toArr(lastSent).length;
+    if(n>0){doSend({type:'backspace',count:n});}
+    lastSent='';box.value='';clearTimeout(syncTimer);clearTimeout(autoClearTimer);pendingSince=0;
+    return;
+  }
+  if(lastLen>0){doSend({type:'backspace',count:lastLen});lastLen=0;}
+};
+document.addEventListener('visibilitychange',function(){
+  // 回到前台且连接已断：重置退避并立即重连
+  if(!document.hidden&&(!ws||ws.readyState>1)){backoff=0;clearTimeout(timer);connect();}
+});
+
+setMode('manual');
+// 输码连接按钮始终可用：首次无码连接、码失效后重新输码都走这里
+codego.onclick=function(){
+  var c=(codeinput.value||'').trim();
+  if(!c){return;}
+  code=c;
+  coderow.style.display='none';
+  backoff=0;connect();
+};
+if(!code){
+  // 没有配对码：显示输入框，手动输码连接（二维码之外的第二通道）
+  coderow.style.display='flex';
+  setSt(false,'请输入电脑上的配对码');
+}else{
+  connect();
+}
+})();
+</script>
+</body>
+</html>

@@ -1,9 +1,9 @@
 ﻿// ============================================================
-// TypeBridge 阶段2 —— 电脑端主程序 v0.2
+// AirType 阶段2 —— 电脑端主程序 v0.2
 // 手机浏览器打字 → 局域网 WebSocket → 本程序注入电脑前台输入框
 // 语法：C# 5（系统自带 csc.exe 编译，禁用 C#6+ 语法）
 // 编译：build\build_stage1.bat （/target:winexe 纯托盘，无控制台窗口）
-// 运行：build\TypeBridge.exe   双击即用：自动弹浏览器显示扫码二维码，
+// 运行：build\AirType.exe   双击即用：自动弹浏览器显示扫码二维码，
 //       右下角托盘常驻（右键：链接二维码 / 退出），日志写本地文件
 // 设计要点（对应方案 docs/跨屏输入工具-实施方案.md）：
 //   - TcpListener 裸 Socket（坑：HttpListener 绑局域网IP要管理员，见方案8.7）
@@ -28,14 +28,14 @@ using System.Threading;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
-namespace TypeBridge
+namespace AirType
 {
     // ---------------- 日志（v0.2 起写本地文件，winexe 无控制台） ----------------
     internal static class Log
     {
         private static readonly object Gate = new object();
         private static readonly string Dir =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TypeBridge");
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AirType");
         private static readonly string FilePath = Path.Combine(Dir, "log.txt");
 
         internal static void Info(string msg)
@@ -320,7 +320,7 @@ namespace TypeBridge
         // 无害自检
         internal static int SelfCheck()
         {
-            Console.WriteLine("TypeBridge 注入内核自检 (无注入)");
+            Console.WriteLine("AirType 注入内核自检 (无注入)");
             Console.WriteLine(new string('=', 46));
             Console.WriteLine(string.Format("sizeof(INPUT) = {0} (x64 应为 40) {1}",
                 SizeOfInput, SizeOfInput == 40 ? "OK" : "FAIL"));
@@ -389,7 +389,7 @@ namespace TypeBridge
             if (tray == null) return;
             Action a = delegate
             {
-                try { tray.ShowBalloonTip(1500, "TypeBridge", msg, ToolTipIcon.Info); }
+                try { tray.ShowBalloonTip(1500, "AirType", msg, ToolTipIcon.Info); }
                 catch (Exception) { }
             };
             if (gate != null && gate.IsHandleCreated) gate.BeginInvoke(a);
@@ -575,7 +575,7 @@ namespace TypeBridge
         internal const long MaxFile = 200L * 1024 * 1024;   // 单文件上限 200MB
         private static readonly string Dir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            @"Downloads\TypeBridge接收");
+            @"Downloads\AirType接收");
 
         private static string Sanitize(string name)
         {
@@ -665,7 +665,7 @@ namespace TypeBridge
         {
             // 前台是我们自己的窗口(如扫码页)时贴了也白贴，直接提示换目标
             if (Inject.ForegroundIsSelf())
-                return "当前前台是 TypeBridge 自己的窗口，请先点开要粘贴的目标窗口（文件已保存）";
+                return "当前前台是 AirType 自己的窗口，请先点开要粘贴的目标窗口（文件已保存）";
 
             // 0) 备份原剪贴板：三个常见格式各留一份字节副本，恢复时原样放回
             byte[] oldDib = NativeClip.GetBytes(NativeClip.CF_DIB);
@@ -751,7 +751,7 @@ namespace TypeBridge
     internal static class AutoStart
     {
         private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        private const string ValueName = "TypeBridge";
+        private const string ValueName = "AirType";
 
         private static string ExePath
         {
@@ -858,7 +858,7 @@ namespace TypeBridge
         internal static string Get(string name)
         {
             Assembly asm = Assembly.GetExecutingAssembly();
-            using (Stream s = asm.GetManifestResourceStream("TypeBridgeRes." + name))
+            using (Stream s = asm.GetManifestResourceStream("AirTypeRes." + name))
             {
                 if (s == null) return "<h1>资源缺失: " + name + "</h1>";
                 using (StreamReader r = new StreamReader(s, Encoding.UTF8))
@@ -1587,7 +1587,7 @@ namespace TypeBridge
             }
             else
             {
-                PasteGate.Notify("已接收文件到「下载\\TypeBridge接收」：" + name);
+                PasteGate.Notify("已接收文件到「下载\\AirType接收」：" + name);
             }
         }
 
@@ -1708,7 +1708,7 @@ namespace TypeBridge
 
         internal PairForm()
         {
-            Text = "TypeBridge 扫码连接";
+            Text = "AirType 扫码连接";
             // 支持最大化/最小化：内嵌 WebBrowser 是 Dock.Fill，放大后二维码跟着变大
             FormBorderStyle = FormBorderStyle.Sizable;
             MaximizeBox = true;
@@ -1791,7 +1791,7 @@ namespace TypeBridge
                 // 重新配对必须同时吊销旧会话，否则旧手机拿着有效连接继续输入，换码就形同虚设
                 TinyHttp.KickActive("电脑已重新配对：配对码已更新，请重新扫新码");
                 Log.Info("配对码已更新: " + Pairing.Code);
-                tray.ShowBalloonTip(1500, "TypeBridge", "新配对码: " + Pairing.Code + "，请重新扫码", ToolTipIcon.Info);
+                tray.ShowBalloonTip(1500, "AirType", "新配对码: " + Pairing.Code + "，请重新扫码", ToolTipIcon.Info);
             });
             pauseItem = new MenuItem("暂停注入", delegate
             {
@@ -1827,11 +1827,11 @@ namespace TypeBridge
                 string err = AutoStart.Set(want);
                 if (err != null)
                 {
-                    MessageBox.Show("设置开机启动失败: " + err, "TypeBridge");
+                    MessageBox.Show("设置开机启动失败: " + err, "AirType");
                     return;
                 }
                 RefreshStartupItem();
-                tray.ShowBalloonTip(1500, "TypeBridge", want ? "已开启开机自动启动" : "已关闭开机自动启动", ToolTipIcon.Info);
+                tray.ShowBalloonTip(1500, "AirType", want ? "已开启开机自动启动" : "已关闭开机自动启动", ToolTipIcon.Info);
             });
             RefreshStartupItem();
             menu.MenuItems.Add(startupItem);
@@ -1876,7 +1876,7 @@ namespace TypeBridge
 
             tray = new NotifyIcon();
             tray.Icon = System.Drawing.SystemIcons.Application;
-            tray.Text = "TypeBridge 配对码 " + Pairing.Code;
+            tray.Text = "AirType 配对码 " + Pairing.Code;
             tray.ContextMenu = menu;
             tray.Visible = true;
             tray.DoubleClick += delegate { OpenPair(); };
@@ -1897,7 +1897,7 @@ namespace TypeBridge
             if (ip == NetDetect.Current) return;
             NetDetect.Current = ip;
             Log.Info("扫码地址已切换为: " + ip + ":" + port);
-            tray.ShowBalloonTip(1500, "TypeBridge", "扫码地址已改为 http://" + ip + ":" + port + "，手机重新扫码即可", ToolTipIcon.Info);
+            tray.ShowBalloonTip(1500, "AirType", "扫码地址已改为 http://" + ip + ":" + port + "，手机重新扫码即可", ToolTipIcon.Info);
             // 扫码窗口开着的话立即重画二维码，免得还指着旧地址
             if (pairForm != null && pairForm.Visible) pairForm.ShowPair("http://localhost:" + port + "/pair");
         }
@@ -1937,23 +1937,23 @@ namespace TypeBridge
             if (TinyHttp.PortInUse(Port))
             {
                 MessageBox.Show(
-                    "TypeBridge 已经在运行了（右下角托盘图标里）。" + Environment.NewLine + Environment.NewLine
+                    "AirType 已经在运行了（右下角托盘图标里）。" + Environment.NewLine + Environment.NewLine
                     + "右键托盘图标选「链接二维码」即可弹出扫码窗口。",
-                    "TypeBridge", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    "AirType", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return 0;
             }
 
             string ip = NetDetect.PickBestIpv4();
             if (ip == null)
             {
-                MessageBox.Show("未找到可用的局域网 IP，请检查电脑是否连上网络。", "TypeBridge",
+                MessageBox.Show("未找到可用的局域网 IP，请检查电脑是否连上网络。", "AirType",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return 1;
             }
             NetDetect.Current = ip;
             string code = Pairing.NewCode();
 
-            Log.Info("========== TypeBridge v0.2 启动 ==========");
+            Log.Info("========== AirType v0.2 启动 ==========");
             List<string[]> nics = NetDetect.ListCandidates();
             if (nics.Count > 1)
             {
@@ -1976,7 +1976,7 @@ namespace TypeBridge
             for (int i = 0; i < 25 && !bindOk && bindErr == null; i++) Thread.Sleep(100);
             if (bindErr != null)
             {
-                MessageBox.Show("服务启动失败: " + bindErr, "TypeBridge",
+                MessageBox.Show("服务启动失败: " + bindErr, "AirType",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return 1;
             }
@@ -1990,7 +1990,7 @@ namespace TypeBridge
                 while (true)
                 {
                     int n = State.ClientCount;
-                    string t = (n > 0 ? "TypeBridge 手机已连接 " : "TypeBridge 等待扫码 ")
+                    string t = (n > 0 ? "AirType 手机已连接 " : "AirType 等待扫码 ")
                         + "码" + Pairing.Code + " " + NetDetect.Current + ":" + Port;
                     if (t != lastT)
                     {
@@ -2010,24 +2010,24 @@ namespace TypeBridge
             if (AutoStart.IsEnabled())
             {
                 MessageBox.Show(
-                    "TypeBridge 已在运行。" + Environment.NewLine + Environment.NewLine
+                    "AirType 已在运行。" + Environment.NewLine + Environment.NewLine
                     + "占用内存很小，关掉浏览器窗口和电脑上的命令行都没关系，"
                     + "程序会一直在右下角托盘里待命。" + Environment.NewLine + Environment.NewLine
                     + "下次用手机直接扫码就能连上继续使用。",
-                    "TypeBridge", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    "AirType", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
             {
                 DialogResult dr = MessageBox.Show(
-                    "TypeBridge 已启动，浏览器里扫码就能连。" + Environment.NewLine + Environment.NewLine
+                    "AirType 已启动，浏览器里扫码就能连。" + Environment.NewLine + Environment.NewLine
                     + "占用内存很小，下次可以直接扫码连接使用。" + Environment.NewLine + Environment.NewLine
                     + "是否加入开机自动启动？（推荐，开机后无需手动打开）",
-                    "TypeBridge", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    "AirType", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (dr == DialogResult.Yes)
                 {
                     string err = AutoStart.Set(true);
                     if (err != null)
-                        MessageBox.Show("设置开机启动失败: " + err, "TypeBridge",
+                        MessageBox.Show("设置开机启动失败: " + err, "AirType",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# TypeBridge 麒麟版 · 一键安装向导
+# AirType 麒麟版 · 一键安装向导
 #
 # 目标用户：不会命令行的人。全程图形弹窗，只有"安装系统依赖"
 # 那一步会弹一次管理员密码框。
@@ -13,7 +13,7 @@
 # 会做四件事：
 #   ① 检测这台机器的显示协议与注入工具（X11 / Wayland）
 #   ② 用管理员权限补齐注入依赖（xdotool / wl-clipboard / xclip）
-#   ③ 把程序装到用户目录（~/.local/share/typebridge，无需管理员）
+#   ③ 把程序装到用户目录（~/.local/share/airtype，无需管理员）
 #   ④ 创建桌面图标 + 开始菜单项 + 开机自启，并立即启动
 #
 # 说明：脚本要求 LF 换行、UTF-8 无 BOM。若在 Windows 上编辑过，
@@ -39,19 +39,19 @@ if [ ! -t 0 ] && ! command -v zenity >/dev/null 2>&1 && [ -z "${TB_REEXEC:-}" ];
     done
 fi
 
-APP_NAME="TypeBridge 跨屏输入"
-INSTALL_DIR="$HOME/.local/share/typebridge"
+APP_NAME="AirType 跨屏输入"
+INSTALL_DIR="$HOME/.local/share/airtype"
 ICON_DST="$INSTALL_DIR/icon.svg"
 APPS_DIR="$HOME/.local/share/applications"
-DESKTOP_FILE="$APPS_DIR/typebridge.desktop"
+DESKTOP_FILE="$APPS_DIR/airtype.desktop"
 LOG="$INSTALL_DIR/install.log"
 
 # 脚本所在目录（双击运行时 $0 可能是相对路径，先转成绝对路径）
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SRC_PY="$SCRIPT_DIR/typebridge.py"
+SRC_PY="$SCRIPT_DIR/airtype.py"
 SRC_WEB="$SCRIPT_DIR/web"
-SRC_ICON="$SCRIPT_DIR/assets/typebridge-icon.svg"
-[ -f "$SRC_ICON" ] || SRC_ICON="$SCRIPT_DIR/typebridge-icon.svg"
+SRC_ICON="$SCRIPT_DIR/assets/airtype-icon.svg"
+[ -f "$SRC_ICON" ] || SRC_ICON="$SCRIPT_DIR/airtype-icon.svg"
 
 # 检测函数：会写全局变量 SESSION / MISSING / CAN_INSTALL
 SESSION=""
@@ -188,11 +188,11 @@ install_deps() {
     # 安装失败（常见：没网 / 软件源不可用 / 授权被拒）
     local hint=""
     if [ "$SESSION" = "X11" ]; then
-        hint="装不上 xdotool 也能先装好 TypeBridge 试试看，必要时改用剪贴板方案（装 xclip）。"
+        hint="装不上 xdotool 也能先装好 AirType 试试看，必要时改用剪贴板方案（装 xclip）。"
     else
         hint="装不上 wl-clipboard 的话，剪贴板方案也跑不了。可以检查这台电脑的网络/软件源后重装。"
     fi
-    if confirm "依赖没装上（可能是没网、软件源不可用或密码没输对）。\n\n$hint\n\n是否继续安装 TypeBridge 本体？\n（程序会先装上，等依赖就绪后再用）" "继续安装" "退出"; then
+    if confirm "依赖没装上（可能是没网、软件源不可用或密码没输对）。\n\n$hint\n\n是否继续安装 AirType 本体？\n（程序会先装上，等依赖就绪后再用）" "继续安装" "退出"; then
         return 1
     fi
     fail_exit "安装已取消。想重试时再运行 install.sh 即可。"
@@ -206,10 +206,10 @@ install_app() {
 
     # 拷贝主程序
     if [ ! -f "$SRC_PY" ]; then
-        fail_exit "找不到 typebridge.py。请把整个 kylin 文件夹一起拷到这台电脑，再运行安装向导。"
+        fail_exit "找不到 airtype.py。请把整个 kylin 文件夹一起拷到这台电脑，再运行安装向导。"
     fi
-    cp "$SRC_PY" "$INSTALL_DIR/typebridge.py" || fail_exit "写入 $INSTALL_DIR 失败，请检查磁盘空间或权限。"
-    chmod +x "$INSTALL_DIR/typebridge.py"
+    cp "$SRC_PY" "$INSTALL_DIR/airtype.py" || fail_exit "写入 $INSTALL_DIR 失败，请检查磁盘空间或权限。"
+    chmod +x "$INSTALL_DIR/airtype.py"
 
     # 拷贝手机端网页（程序依赖同目录 web/）
     if [ -d "$SRC_WEB" ]; then
@@ -236,9 +236,9 @@ write_desktop_entry() {
     cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
 Type=Application
-Name=TypeBridge 跨屏输入
+Name=AirType 跨屏输入
 Comment=手机扫码，电脑出字
-Exec=python3 $INSTALL_DIR/typebridge.py --open-browser
+Exec=python3 $INSTALL_DIR/airtype.py --open-browser
 Icon=$ICON_DST
 Terminal=false
 Categories=Utility;
@@ -247,10 +247,10 @@ EOF
     chmod +x "$DESKTOP_FILE" 2>/dev/null || true
     # 修复入口：以后遇到"通道未就绪"双击它，先补装依赖再自检。
     # Terminal=true：没装 zenity 的机器双击也能弹出终端窗口走文字向导。
-    cat > "$APPS_DIR/typebridge-fix.desktop" <<EOF
+    cat > "$APPS_DIR/airtype-fix.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=TypeBridge 环境修复
+Name=AirType 环境修复
 Comment=检查并修复文本注入通道
 Exec=bash $INSTALL_DIR/install.sh --fix-deps --check
 Icon=$ICON_DST
@@ -258,21 +258,21 @@ Terminal=true
 Categories=Utility;
 StartupNotify=false
 EOF
-    chmod +x "$APPS_DIR/typebridge-fix.desktop" 2>/dev/null || true
+    chmod +x "$APPS_DIR/airtype-fix.desktop" 2>/dev/null || true
     # 稳定模式入口：xdotool 逐字打字在部分机器上会丢字，
     # 剪贴板方案整段粘贴 100% 不丢字，只是会覆盖剪贴板。
-    cat > "$APPS_DIR/typebridge-stable.desktop" <<EOF
+    cat > "$APPS_DIR/airtype-stable.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=TypeBridge 稳定模式
+Name=AirType 稳定模式
 Comment=剪贴板粘贴不丢字（需已装 xclip / wl-clipboard）
-Exec=python3 $INSTALL_DIR/typebridge.py --open-browser --channel clipboard
+Exec=python3 $INSTALL_DIR/airtype.py --open-browser --channel clipboard
 Icon=$ICON_DST
 Terminal=false
 Categories=Utility;
 StartupNotify=false
 EOF
-    chmod +x "$APPS_DIR/typebridge-stable.desktop" 2>/dev/null || true
+    chmod +x "$APPS_DIR/airtype-stable.desktop" 2>/dev/null || true
     # 刷新开始菜单缓存（存在才执行）
     if command -v update-desktop-database >/dev/null 2>&1; then
         update-desktop-database "$APPS_DIR" >/dev/null 2>&1 || true
@@ -287,19 +287,19 @@ make_desktop_shortcut() {
     done
     [ -z "$desktop_dir" ] && return 0
 
-    if confirm "是否在桌面放一个「TypeBridge」图标？\n（以后双击它就能弹出配对二维码）" "放一个" "不用了"; then
-        cp "$DESKTOP_FILE" "$desktop_dir/TypeBridge.desktop"
-        chmod +x "$desktop_dir/TypeBridge.desktop" 2>/dev/null || true
+    if confirm "是否在桌面放一个「AirType」图标？\n（以后双击它就能弹出配对二维码）" "放一个" "不用了"; then
+        cp "$DESKTOP_FILE" "$desktop_dir/AirType.desktop"
+        chmod +x "$desktop_dir/AirType.desktop" 2>/dev/null || true
         # 标记为可信图标，避免双击时反复询问
         if command -v gio >/dev/null 2>&1; then
-            gio set "$desktop_dir/TypeBridge.desktop" metadata::trusted true 2>/dev/null || true
+            gio set "$desktop_dir/AirType.desktop" metadata::trusted true 2>/dev/null || true
         fi
     fi
 }
 
 install_autostart() {
     # 复用主程序自带的 XDG autostart 能力
-    python3 "$INSTALL_DIR/typebridge.py" --install-autostart >>"$LOG" 2>&1
+    python3 "$INSTALL_DIR/airtype.py" --install-autostart >>"$LOG" 2>&1
 }
 
 # ---------- 自检 / 修复入口（给已经装完、但遇到问题的用户） ----------
@@ -309,15 +309,15 @@ run_check() {
     if ! command -v python3 >/dev/null 2>&1; then
         fail_exit "没找到 python3（麒麟 V10 桌面版一般自带）。"
     fi
-    local py="$INSTALL_DIR/typebridge.py"
-    [ -f "$py" ] || py="$SCRIPT_DIR/typebridge.py"
+    local py="$INSTALL_DIR/airtype.py"
+    [ -f "$py" ] || py="$SCRIPT_DIR/airtype.py"
     if [ ! -f "$py" ]; then
-        fail_exit "找不到 typebridge.py，请重新安装。"
+        fail_exit "找不到 airtype.py，请重新安装。"
     fi
     local out
     out=$(python3 "$py" --selfcheck 2>&1)
     if have_zenity; then
-        zenity --text-info --title="TypeBridge 环境自检结果" --width=680 --height=480 \
+        zenity --text-info --title="AirType 环境自检结果" --width=680 --height=480 \
             --font="Monospace 12" --ok-label="关闭" <<<"$out"
     else
         echo "$out"
@@ -343,12 +343,12 @@ fix_deps() {
 }
 
 launch_now() {
-    if confirm "全部装好了！现在立即启动 TypeBridge 吗？\n（会弹出配对二维码，手机扫码即可开始）" "立即启动" "稍后自己开"; then
-        nohup python3 "$INSTALL_DIR/typebridge.py" --open-browser >>"$LOG" 2>&1 &
+    if confirm "全部装好了！现在立即启动 AirType 吗？\n（会弹出配对二维码，手机扫码即可开始）" "立即启动" "稍后自己开"; then
+        nohup python3 "$INSTALL_DIR/airtype.py" --open-browser >>"$LOG" 2>&1 &
         disown 2>/dev/null || true
-        msg "已启动。手机和电脑连同一个 WiFi，用手机浏览器扫电脑上弹出的二维码即可。\n\n以后使用：双击桌面（或开始菜单里的）「TypeBridge」图标。"
+        msg "已启动。手机和电脑连同一个 WiFi，用手机浏览器扫电脑上弹出的二维码即可。\n\n以后使用：双击桌面（或开始菜单里的）「AirType」图标。"
     else
-        msg "安装完成。使用时双击桌面或开始菜单里的「TypeBridge 图标」即可。"
+        msg "安装完成。使用时双击桌面或开始菜单里的「AirType 图标」即可。"
     fi
 }
 
@@ -380,10 +380,10 @@ main() {
         return 0
     fi
 
-    echo "TypeBridge 麒麟版 一键安装向导（全程自动模式）"
+    echo "AirType 麒麟版 一键安装向导（全程自动模式）"
 
     # 欢迎页（自动模式直接开始）
-    if ! confirm "欢迎使用 TypeBridge 跨屏输入工具！\n\n功能：手机打字/语音 → 电脑光标处直接出字，不用传文件。\n\n安装向导会：\n  ① 检测这台电脑的环境\n  ② 安装所需依赖（会要一次管理员密码）\n  ③ 安装 TypeBridge 并创建桌面图标\n\n现在开始吗？" "开始安装" "退出"; then
+    if ! confirm "欢迎使用 AirType 跨屏输入工具！\n\n功能：手机打字/语音 → 电脑光标处直接出字，不用传文件。\n\n安装向导会：\n  ① 检测这台电脑的环境\n  ② 安装所需依赖（会要一次管理员密码）\n  ③ 安装 AirType 并创建桌面图标\n\n现在开始吗？" "开始安装" "退出"; then
         exit 0
     fi
 
@@ -433,7 +433,7 @@ main() {
 
     # 开机自启必须让用户本人选一次（即使全程自动也弹窗），选否就不装
     local autostart_note
-    if ask_real "是否开机自动启动 TypeBridge？\n\n开启后，每次开机自动在后台待命，手机扫码就能用。\n\n推荐开启。" "开机自启（推荐）" "不需要"; then
+    if ask_real "是否开机自动启动 AirType？\n\n开启后，每次开机自动在后台待命，手机扫码就能用。\n\n推荐开启。" "开机自启（推荐）" "不需要"; then
         install_autostart
         autostart_note="· 开机自启已开启（下次开机自动运行）"
     else
@@ -441,7 +441,7 @@ main() {
     fi
 
     # 完成并启动
-    local done="✅ 安装完成！\n\n· 程序目录：$INSTALL_DIR\n· 开始菜单已添加「TypeBridge」\n$autostart_note\n\n卸载方法：开始菜单搜索 TypeBridge 相关内容，或运行 python3 $INSTALL_DIR/typebridge.py --uninstall-autostart 后删除 $INSTALL_DIR 文件夹。"
+    local done="✅ 安装完成！\n\n· 程序目录：$INSTALL_DIR\n· 开始菜单已添加「AirType」\n$autostart_note\n\n卸载方法：开始菜单搜索 AirType 相关内容，或运行 python3 $INSTALL_DIR/airtype.py --uninstall-autostart 后删除 $INSTALL_DIR 文件夹。"
     msg "$done"
 
     launch_now

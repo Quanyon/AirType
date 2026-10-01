@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TypeBridge 麒麟版 启动脚本
+# AirType 麒麟版 启动脚本
 #
 # 用法：
 #   ./run.sh              先自检，再启动服务并弹出配对页
@@ -21,7 +21,7 @@ fi
 echo "=========================================="
 echo " 第一步：环境自检（这一步不会往任何地方打字）"
 echo "=========================================="
-python3 typebridge.py --selfcheck
+python3 airtype.py --selfcheck
 SC=$?
 echo
 if [ "$SC" -ne 0 ]; then
@@ -29,11 +29,11 @@ if [ "$SC" -ne 0 ]; then
     echo "装完再重新跑本脚本即可。"
     echo
     echo "也可以先直接启动看看（配对页上会挂出提示）："
-    echo "  python3 typebridge.py --open-browser"
+    echo "  python3 airtype.py --open-browser"
     echo
 fi
 
 echo "=========================================="
 echo " 第二步：启动服务"
 echo "=========================================="
-exec python3 typebridge.py --open-browser "$@"
+exec python3 airtype.py --open-browser "$@"

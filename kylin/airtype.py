@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-TypeBridge 麒麟版（Linux）
+AirType 麒麟版（Linux）
 手机扫码 → 局域网 WebSocket → 把文字送进电脑前台输入框
 
 设计原则与 Windows 版一致：只做管道，不做大脑。
@@ -10,13 +10,13 @@ TypeBridge 麒麟版（Linux）
 零第三方依赖，只用 Python 标准库（麒麟 V10 自带 Python 3 即可跑）。
 
 用法：
-    python3 typebridge.py                  启动服务（自动选择注入通道）
-    python3 typebridge.py --selfcheck      环境与通道自检，不做任何注入
-    python3 typebridge.py --test-inject    交互式注入实测（倒数 5 秒后往当前窗口打字）
-    python3 typebridge.py --channel xdotool  强制指定通道
-    python3 typebridge.py --open-browser   启动后自动打开配对页
-    python3 typebridge.py --install-autostart    装开机自启
-    python3 typebridge.py --uninstall-autostart  卸开机自启
+    python3 airtype.py                  启动服务（自动选择注入通道）
+    python3 airtype.py --selfcheck      环境与通道自检，不做任何注入
+    python3 airtype.py --test-inject    交互式注入实测（倒数 5 秒后往当前窗口打字）
+    python3 airtype.py --channel xdotool  强制指定通道
+    python3 airtype.py --open-browser   启动后自动打开配对页
+    python3 airtype.py --install-autostart    装开机自启
+    python3 airtype.py --uninstall-autostart  卸开机自启
 
 注入通道（运行时自动挑选，不用手工配）：
     X11 会话        xdotool > dotool > clipboard
@@ -49,7 +49,7 @@ import urllib.parse
 # ============================================================
 
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-CONF_DIR = os.path.expanduser("~/.config/typebridge")
+CONF_DIR = os.path.expanduser("~/.config/airtype")
 CONF_FILE = os.path.join(CONF_DIR, "config.json")
 LOG_FILE = os.path.join(CONF_DIR, "log.txt")
 WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
@@ -66,7 +66,7 @@ KEY_BATCH = 200           # 按键类通道每批次数（防命令行参数超�
 WARN_HTML = (
     '<div class="warn">'
     '电脑端还没有可用的文本注入通道，扫上台也送不进字。<br>'
-    '请在电脑上运行 <code>python3 typebridge.py --selfcheck</code>，'
+    '请在电脑上运行 <code>python3 airtype.py --selfcheck</code>，'
     '按提示把工具装好，再重启本程序。'
     '</div>'
 )
@@ -110,7 +110,7 @@ class State(object):
 
 
 # ============================================================
-# 配对码（持久化到 ~/.config/typebridge/config.json）
+# 配对码（持久化到 ~/.config/airtype/config.json）
 # ============================================================
 
 class Pairing(object):
@@ -608,7 +608,7 @@ def recv_dir():
             d = cand
     if not d:
         d = os.path.join(os.path.expanduser("~"), "Downloads")
-    _recv_dir_cache = os.path.join(d, "TypeBridge接收")
+    _recv_dir_cache = os.path.join(d, "AirType接收")
     return _recv_dir_cache
 
 
@@ -1261,7 +1261,7 @@ class Server(object):
             # 但探测和 bind 之间有窗口期，抢到了就得说清楚，不能让进程假装在跑。
             self.failed = True
             Log.info("!! 端口 %d 绑定失败：%s" % (self.port, e))
-            Log.info("!! 可能已经有另一个 TypeBridge 在跑了，试试 --port 换一个端口。")
+            Log.info("!! 可能已经有另一个 AirType 在跑了，试试 --port 换一个端口。")
             return
         srv.listen(16)
         self.ready = True
@@ -1439,14 +1439,14 @@ class Server(object):
 
 def install_autostart(port):
     os.makedirs(AUTOSTART_DIR, exist_ok=True)
-    path = os.path.join(AUTOSTART_DIR, "typebridge.desktop")
+    path = os.path.join(AUTOSTART_DIR, "airtype.desktop")
     script = os.path.abspath(__file__)
     # 带上 --open-browser：开机后服务在后台跑，用户看不到二维码，
     # 顺手把配对页弹出来，开机就能扫码。
     content = (
         "[Desktop Entry]\n"
         "Type=Application\n"
-        "Name=TypeBridge\n"
+        "Name=AirType\n"
         "Comment=手机扫码跨屏输入\n"
         "Exec=%s %s --port %d --open-browser\n"
         "Terminal=false\n"
@@ -1461,7 +1461,7 @@ def install_autostart(port):
 
 
 def uninstall_autostart():
-    path = os.path.join(AUTOSTART_DIR, "typebridge.desktop")
+    path = os.path.join(AUTOSTART_DIR, "airtype.desktop")
     if os.path.exists(path):
         os.remove(path)
         Log.info("已移除开机自启: %s" % path)
@@ -1475,7 +1475,7 @@ def uninstall_autostart():
 
 def selfcheck():
     print("=" * 54)
-    print(" TypeBridge 麒麟版 自检（不做任何注入）")
+    print(" AirType 麒麟版 自检（不做任何注入）")
     print("=" * 54)
     session, env_lines, rows = channel_report()
     for l in env_lines:
@@ -1516,7 +1516,7 @@ def selfcheck():
     if injector.name == "clipboard":
         print("  注意：剪贴板通道会覆盖你当前的剪贴板内容。")
     print()
-    print("  下一步可跑  python3 typebridge.py --test-inject  做一次真实注入实测")
+    print("  下一步可跑  python3 airtype.py --test-inject  做一次真实注入实测")
     return 0
 
 
@@ -1535,7 +1535,7 @@ def test_inject(seconds=5, text=None):
     if injector is None:
         print("没有可用的注入通道，先跑 --selfcheck 看看缺什么。")
         return 1
-    sample = text or "TypeBridge 跨屏输入测试 123"
+    sample = text or "AirType 跨屏输入测试 123"
     print("将使用通道 [%s]" % injector.name)
     if injector.name == "clipboard":
         print("注意：这会覆盖你当前的剪贴板。")
@@ -1563,7 +1563,7 @@ def test_inject(seconds=5, text=None):
 # ============================================================
 
 def main():
-    ap = argparse.ArgumentParser(description="TypeBridge 麒麟版（Linux）")
+    ap = argparse.ArgumentParser(description="AirType 麒麟版（Linux）")
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--ip", default=None,
                     help="指定二维码显示的本机 IPv4（多网卡时选手机能访问到的那块）")
@@ -1592,14 +1592,14 @@ def main():
         # 不退出。让服务照常起来，配对页上会挂一条红色警示，
         # 扫码的人当场就能看到「电脑那边还没准备好」，不用去翻日志。
         Log.info("!! 没找到可用的注入通道：服务照常启动，但手机发来的文字送不出去。")
-        Log.info("!! 请在电脑上运行 python3 typebridge.py --selfcheck，按提示装好工具再重启本程序。")
+        Log.info("!! 请在电脑上运行 python3 airtype.py --selfcheck，按提示装好工具再重启本程序。")
 
     url = "http://localhost:%d/pair" % args.port
 
     if port_in_use(args.port):
         # 已经有一个在跑了。与其甩一句「地址被占用」让人发愣，
         # 不如直接把那个实例的配对页打开，用户要的就是那张二维码。
-        Log.info("端口 %d 已经有人在监听，多半是 TypeBridge 本身已经在跑了。" % args.port)
+        Log.info("端口 %d 已经有人在监听，多半是 AirType 本身已经在跑了。" % args.port)
         Log.info("直接给你打开它的配对页：%s" % url)
         if not open_browser(url):
             Log.info("没能自动打开浏览器，请手动访问上面的地址。")
@@ -1620,7 +1620,7 @@ def main():
         return 1
     State.qr_ip = ip
 
-    Log.info("========== TypeBridge 麒麟版 启动 ==========")
+    Log.info("========== AirType 麒麟版 启动 ==========")
     if len(cands) > 1:
         Log.info("检测到多个局域网地址: " + "、".join("%s(%s)" % c for c in cands))
     Log.info("扫码地址(当前网卡): http://%s:%d  换网卡: 重启并加 --ip 另一个地址" % (ip, args.port))

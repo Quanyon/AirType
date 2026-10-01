@@ -1,5 +1,5 @@
 ﻿// ============================================================
-// TypeBridge 阶段0验证程序 v2 —— SendInput 注入内核测试
+// AirType 阶段0验证程序 v2 —— SendInput 注入内核测试
 // v2 改版原因：v1 的"倒计时抢窗口"方式对人不友好，且无防呆，
 //   有用户误对 WorkBuddy(聊天类应用)注入导致其卡死。
 // v2 核心改进：
@@ -221,7 +221,7 @@ static class InjectTest
         return true;
     }
 
-    // ---------------- 注入引擎（与正式版 TypeBridge 同源） ----------------
+    // ---------------- 注入引擎（与正式版 AirType 同源） ----------------
 
     // 把文字编码成 INPUT 数组：每个 UTF-16 码元一对 down/up（emoji 走代理对自动拆分）
     private static INPUT[] BuildTextInputs(string text)
@@ -370,7 +370,7 @@ static class InjectTest
     // ---------------- 自检（不注入任何内容） ----------------
     private static int SelfCheck()
     {
-        Console.WriteLine("TypeBridge 阶段0 自检 (无注入)");
+        Console.WriteLine("AirType 阶段0 自检 (无注入)");
         Console.WriteLine(new string('=', 46));
         Console.WriteLine(string.Format("sizeof(INPUT)      = {0}   (x64 应为 40) {1}",
             SizeOfInput, SizeOfInput == 40 ? "OK" : "FAIL!"));
@@ -412,7 +412,7 @@ static class InjectTest
         }
 
         Console.WriteLine("======================================================");
-        Console.WriteLine("  TypeBridge 阶段0验证 v2 (窗口选择版)");
+        Console.WriteLine("  AirType 阶段0验证 v2 (窗口选择版)");
         Console.WriteLine("======================================================");
         Console.WriteLine();
         Console.WriteLine("  ** 使用前必读 **");

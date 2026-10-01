@@ -1,6 +1,6 @@
 [简体中文](README.md) | [English](README.en.md)
 
-# TypeBridge 跨屏输入
+# AirType 跨屏输入
 
 手机打字 / 语音 → 文字直接出现在电脑光标处;手机照片 → 自动粘贴进电脑当前输入框。
 纯局域网通信,手机侧零安装(浏览器即用),电脑侧零第三方依赖。
@@ -8,13 +8,13 @@
 ## 为什么做
 
 电脑没有麦克风(或麦克风太远),想用手机语音输入;开会时想用手机拍白板、拍纸质文件,立刻贴进电脑上的文档/聊天框。
-TypeBridge 把手机变成电脑的"无线输入法 + 摄像头":连同一个 WiFi、扫码配对,之后手机就是电脑光标处的一块延伸。
+AirType 把手机变成电脑的"无线输入法 + 摄像头":连同一个 WiFi、扫码配对,之后手机就是电脑光标处的一块延伸。
 
 ## 快速开始
 
 ### Windows
 
-1. 双击 `build/TypeBridge.exe`(系统需自带 .NET Framework 4.x,Win10/11 均满足);
+1. 双击 `build/AirType.exe`(系统需自带 .NET Framework 4.x,Win10/11 均满足);
 2. 自动弹出"扫码连接"窗口,右下角托盘常驻;
 3. 手机(与电脑同一 WiFi)微信扫码,或用手机浏览器输入窗口上的地址;
 4. 手机页面出现绿点"已连接",开打。窗口上会同步显示"手机已连接"。
@@ -26,10 +26,10 @@ TypeBridge 把手机变成电脑的"无线输入法 + 摄像头":连同一个 Wi
 ```bash
 bash kylin/install.sh          # 一键安装:补依赖、建桌面图标、装开机自启,全程零输入
 # 或直接运行:
-python3 kylin/typebridge.py    # 启动后浏览器打开 http://localhost:8765/pair
+python3 kylin/airtype.py    # 启动后浏览器打开 http://localhost:8765/pair
 ```
 
-装好后双击桌面图标即可。首次使用可先跑 `python3 kylin/typebridge.py --selfcheck` 查看注入通道就绪情况;多网卡机器上手机连不上时,启动日志会列出全部候选地址,用 `python3 kylin/typebridge.py --ip 另一块网卡地址` 重启即可换块网卡发二维码。
+装好后双击桌面图标即可。首次使用可先跑 `python3 kylin/airtype.py --selfcheck` 查看注入通道就绪情况;多网卡机器上手机连不上时,启动日志会列出全部候选地址,用 `python3 kylin/airtype.py --ip 另一块网卡地址` 重启即可换块网卡发二维码。
 
 ### 手机页面的两种输入模式
 
@@ -46,7 +46,7 @@ python3 kylin/typebridge.py    # 启动后浏览器打开 http://localhost:8765/
 
 1. **智能压缩**:超过 2MB 或长边超过 2048px 的照片自动压成 JPEG 再传;点「原图」开关切回不压缩发送(开关状态会被记住);
 2. **传输过程**:手机显示"发送 i/N · 文件名(百分比)"进度;上传中再点一次按钮=取消整批发送,电脑上正在接收的半截文件会被丢弃;失败时同一张图自动重试一次;
-3. 图片经局域网传到电脑,保存到 `下载/TypeBridge接收`(`~/Downloads` 或麒麟中文桌面的 `~/下载`,重名自动加序号,单文件限 200MB);
+3. 图片经局域网传到电脑,保存到 `下载/AirType接收`(`~/Downloads` 或麒麟中文桌面的 `~/下载`,重名自动加序号,单文件限 200MB);
 4. Windows 版随后自动把它粘贴到电脑当前光标所在的应用(微信、Word、记事本等):剪贴板上同时放**文件引用和位图两种格式**,应用各取所需;剪贴板操作走**系统原生接口**(CF_HDROP+CF_DIB 一次放入,不经 OLE/COM——经 OLE 时微信/Word 等剪贴板监视程序会反向请求数据,大图可致前台窗口卡死约 10 秒);长边超过 3000px 的图会先**降采样再上剪贴板**(磁盘文件仍按原图保存),避免大位图拖垮前台应用;Ctrl+V 按键**分步注入并等待前台进程空闲**,Word/WPS 忙于处理剪贴板通知时也不会丢按键;粘贴后若剪贴板还是我们放的内容才恢复你的原剪贴板,期间你复制了新东西则不覆盖;粘贴是异步的,手机先显示"已保存 ✓ 正在粘贴…",真实结果(成没成、为什么没成)稍后追送,不会提前报"粘贴成功";
 5. 粘贴失败、目标不是图片、或开了"暂停注入"时,自动降级为只保存,文件不丢,手机上会注明原因;
 6. **电脑上取用**:托盘菜单有「打开接收文件夹」和「最近接收」(直接点开最近收到的文件);扫码页上也有「打开接收文件夹」按钮。
@@ -64,15 +64,15 @@ python3 kylin/typebridge.py    # 启动后浏览器打开 http://localhost:8765/
 - **单会话**:同一时间只保留一台手机,新连接会顶掉旧连接并在旧页面上说明原因;
 - **暂停注入**:托盘一键停,手机端发送会得到明确提示;
 - **开机自启**:两版都支持(Windows 托盘菜单,麒麟 XDG autostart);
-- **日志**:Windows `%LocalAppData%\TypeBridge\log.txt`(托盘可直达),麒麟 `~/.config/typebridge/log.txt`。
+- **日志**:Windows `%LocalAppData%\AirType\log.txt`(托盘可直达),麒麟 `~/.config/airtype/log.txt`。
 
 ## 工作原理
 
 ```
 手机浏览器(mobile.html)                 电脑
-  │  文字/按键 → JSON 文本帧               ├─ Windows: TypeBridge.exe(SendInput 注入)
+  │  文字/按键 → JSON 文本帧               ├─ Windows: AirType.exe(SendInput 注入)
   ├──────────── WebSocket :8765 ──────────┤
-  │  图片 → 二进制分块(file 协议)          └─ 麒麟: typebridge.py(xdotool/dotool/剪贴板注入)
+  │  图片 → 二进制分块(file 协议)          └─ 麒麟: airtype.py(xdotool/dotool/剪贴板注入)
 ```
 
 - **零依赖**:Windows 版是单个 C# 5 源文件,用系统自带 `csc.exe` 编译,网页资源以 Win32 资源内嵌进 exe;麒麟版只用 Python 3 标准库;WebSocket 为手写 RFC6455 实现(含分片帧重组,兼容微信浏览器内核的拆分行为)。
@@ -89,7 +89,7 @@ python3 kylin/typebridge.py    # 启动后浏览器打开 http://localhost:8765/
 build\build_stage1.bat
 ```
 
-用系统 `csc.exe`(.NET Framework 4.x)编译,产物 `build\TypeBridge.exe`。三条硬约束:
+用系统 `csc.exe`(.NET Framework 4.x)编译,产物 `build\AirType.exe`。三条硬约束:
 
 1. **只能用 C# 5 语法**(系统 csc 不支持更新语法,字符串插值都不行);
 2. **源文件必须保持 UTF-8 with BOM**,否则中文字符串乱码;
@@ -97,7 +97,7 @@ build\build_stage1.bat
 
 ### 麒麟版
 
-无需编译,`python3 kylin/typebridge.py` 直接运行;页面在 `kylin/web/` 下,改完刷新浏览器即可。
+无需编译,`python3 kylin/airtype.py` 直接运行;页面在 `kylin/web/` 下,改完刷新浏览器即可。
 
 ### 自动化回归测试
 
@@ -111,18 +111,18 @@ build\build_stage1.bat
 二开推荐基线流程(Windows,PowerShell):
 
 ```powershell
-Stop-Process -Name TypeBridge -Force -ErrorAction SilentlyContinue   # 1. 清掉旧实例
+Stop-Process -Name AirType -Force -ErrorAction SilentlyContinue   # 1. 清掉旧实例
 & "build\build_stage1.bat"                                            # 2. 重编
-Start-Process "build\TypeBridge.exe"                                  # 3. 启动新实例
+Start-Process "build\AirType.exe"                                  # 3. 启动新实例
 python spike\test_ws_pairing.py; python spike\test_sync.py            # 4. 回归,退出码 0 = 通过
 ```
 
 ## 目录结构
 
 ```
-src/            Windows 版:TypeBridge.cs(单文件)+ web/(手机端/扫码页资源)
-kylin/          麒麟版:typebridge.py + web/ + install.sh / run.sh + assets/
-build/          编译脚本与产物(TypeBridge.exe)
+src/            Windows 版:AirType.cs(单文件)+ web/(手机端/扫码页资源)
+kylin/          麒麟版:airtype.py + web/ + install.sh / run.sh + assets/
+build/          编译脚本与产物(AirType.exe)
 spike/          自动化测试与历史验证脚本(_ 开头为临时用例,不入库)
 ```
 
@@ -134,7 +134,7 @@ spike/          自动化测试与历史验证脚本(_ 开头为临时用例,不
 2. 电脑有多块网卡(VPN/手机热点/虚拟网卡常见)时二维码可能指向了手机访不到的那块:扫码页上看得到当前地址,换一个试试——Windows 托盘「选择网卡(扫码地址)」直接切,麒麟用 `--ip` 指定后重启;
 3. Windows 防火墙拦了入站。管理员 PowerShell 放行:
    ```powershell
-   New-NetFirewallRule -Name TypeBridge8765 -DisplayName "TypeBridge 局域网输入 (TCP 8765)" -Direction Inbound -Protocol TCP -LocalPort 8765 -Action Allow -Profile Any
+   New-NetFirewallRule -Name AirType8765 -DisplayName "AirType 局域网输入 (TCP 8765)" -Direction Inbound -Protocol TCP -LocalPort 8765 -Action Allow -Profile Any
    ```
    注意:防火墙的 **Block 规则优先于 Allow 规则**——如果曾在 Windows 的放行弹窗上点过"取消",系统会自动生成一条拦截规则,必须删掉它放行规则才生效(`Get-NetFirewallApplicationFilter` 可查);
 4. 还不行:把电脑的网络配置文件从"公用"改为"专用"。
@@ -143,7 +143,7 @@ spike/          自动化测试与历史验证脚本(_ 开头为临时用例,不
 每次启动都会换新码,旧二维码/旧页面立即失效。手机页面会弹出输码框,直接输入电脑屏幕上显示的新 4 位码即可,不用重新扫码。
 
 **图片传过去了但没粘贴到应用?**
-粘贴只会发生在"传输完成那一刻"的前台窗口——发图后别急着切窗口。手机端会分两步显示结果:先"已保存",稍后追送真实粘贴结果,没粘贴上时会注明原因。目标应用不认剪贴板里的文件引用时会自动降级为只保存,去 `下载/TypeBridge接收` 取文件(托盘"最近接收"或扫码页"打开接收文件夹"可直接到达)。开了"暂停注入"时也只保存。
+粘贴只会发生在"传输完成那一刻"的前台窗口——发图后别急着切窗口。手机端会分两步显示结果:先"已保存",稍后追送真实粘贴结果,没粘贴上时会注明原因。目标应用不认剪贴板里的文件引用时会自动降级为只保存,去 `下载/AirType接收` 取文件(托盘"最近接收"或扫码页"打开接收文件夹"可直接到达)。开了"暂停注入"时也只保存。
 
 **手机上显示"注入失败"?**
 说明电脑端注入通道出了问题(麒麟上常见:权限、会话切换)。看电脑日志定位;麒麟跑 `--selfcheck` 重新检查通道,必要时 `--test-inject` 实测。

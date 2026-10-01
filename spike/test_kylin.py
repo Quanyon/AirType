@@ -25,7 +25,7 @@ import time
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, "kylin", "typebridge.py")
+SRC = os.path.join(ROOT, "kylin", "airtype.py")
 
 # ---- 加载模块（不执行 main）----
 spec = importlib.util.spec_from_file_location("tblinux", SRC)

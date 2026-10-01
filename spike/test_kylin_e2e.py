@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""麒麟版端到端验证：真的把 typebridge.py 当程序跑起来。
+"""麒麟版端到端验证：真的把 airtype.py 当程序跑起来。
 
 覆盖 main() 里的两条新路径：
   1) 一个注入通道都没有时，服务仍然要起得来，配对页要挂出警示条
@@ -15,7 +15,7 @@ import time
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, "kylin", "typebridge.py")
+SRC = os.path.join(ROOT, "kylin", "airtype.py")
 PY = sys.executable
 PORT = 8807
 

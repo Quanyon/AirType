@@ -1,4 +1,4 @@
-"""TypeBridge WS 配对冒烟测试（纯标准库，不做任何注入）"""
+"""AirType WS 配对冒烟测试（纯标准库，不做任何注入）"""
 import socket
 import base64
 import hashlib

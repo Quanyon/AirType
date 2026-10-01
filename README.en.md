@@ -1,6 +1,6 @@
 [English](README.en.md) | [简体中文](README.md)
 
-# TypeBridge — Cross-Screen Input
+# AirType — Cross-Screen Input
 
 Type on your phone / dictate with voice → text appears right at the cursor on your PC; snap a photo on your phone → it's pasted automatically into the input field your PC is focused on.
 Pure LAN communication: **zero install on the phone side** (works in any browser), **zero third-party dependencies on the PC side**.
@@ -9,13 +9,13 @@ Pure LAN communication: **zero install on the phone side** (works in any browser
 
 Your PC has no microphone (or it's too far away) and you want to use your phone's voice input; or you're in a meeting and want to photograph a whiteboard or a paper document and drop it straight into the document / chat box on your PC.
 
-TypeBridge turns your phone into a "wireless keyboard + camera" for your PC: join the same Wi-Fi, scan the QR code to pair, and your phone becomes an extension of your PC's cursor.
+AirType turns your phone into a "wireless keyboard + camera" for your PC: join the same Wi-Fi, scan the QR code to pair, and your phone becomes an extension of your PC's cursor.
 
 ## Quick Start
 
 ### Windows
 
-1. Double-click `build/TypeBridge.exe` (requires the built-in .NET Framework 4.x; Win10/11 both satisfy this);
+1. Double-click `build/AirType.exe` (requires the built-in .NET Framework 4.x; Win10/11 both satisfy this);
 2. A "scan to connect" window pops up, and a tray icon stays resident in the bottom-right corner;
 3. On your phone (same Wi-Fi as the PC), scan the QR code with WeChat, or enter the address shown in the window in the phone's browser;
 4. When the phone page shows a green dot "Connected", start typing. The window simultaneously shows "Phone connected".
@@ -27,10 +27,10 @@ Tray right-click menu: the first line always shows the current address / port / 
 ```bash
 bash kylin/install.sh          # one-click install: installs dependencies, creates a desktop icon, enables autostart — zero input required
 # or run directly:
-python3 kylin/typebridge.py    # after startup, open http://localhost:8765/pair in a browser
+python3 kylin/airtype.py    # after startup, open http://localhost:8765/pair in a browser
 ```
 
-After installation, double-click the desktop icon. On first use you can run `python3 kylin/typebridge.py --selfcheck` to check whether the injection channel is ready; on multi-NIC machines where the phone cannot connect, the startup log lists all candidate addresses — restart with `python3 kylin/typebridge.py --ip <another NIC's address>` to switch which NIC the QR code points to.
+After installation, double-click the desktop icon. On first use you can run `python3 kylin/airtype.py --selfcheck` to check whether the injection channel is ready; on multi-NIC machines where the phone cannot connect, the startup log lists all candidate addresses — restart with `python3 kylin/airtype.py --ip <another NIC's address>` to switch which NIC the QR code points to.
 
 ### Two input modes on the phone page
 
@@ -47,7 +47,7 @@ Tap **Photo → PC** on the phone to select multiple photos or take a photo on t
 
 1. **Smart compression**: photos larger than 2 MB or with a long edge over 2048 px are automatically compressed to JPEG before transfer; toggle the **Original** switch to send uncompressed (the switch state is remembered);
 2. **Transfer progress**: the phone shows "sending i/N · filename (percentage)"; tapping the button again mid-upload cancels the whole batch — a half-received file on the PC is discarded; a failed image is automatically retried once;
-3. Photos travel over the LAN to the PC and are saved to `Downloads/TypeBridge接收` (`~/Downloads`, or `~/下载` on Chinese-locale Kylin desktops; duplicate names get an auto-incrementing suffix; 200 MB per-file limit);
+3. Photos travel over the LAN to the PC and are saved to `Downloads/AirType接收` (`~/Downloads`, or `~/下载` on Chinese-locale Kylin desktops; duplicate names get an auto-incrementing suffix; 200 MB per-file limit);
 4. The Windows version then automatically pastes the photo into the app the cursor is currently in (WeChat, Word, Notepad, etc.): the clipboard carries **both a file reference and a bitmap**, and each app takes what it needs; clipboard operations use the **native system API** (CF_HDROP + CF_DIB in one shot, no OLE/COM — via OLE, clipboard-watching apps like WeChat/Word issue reverse data requests, and large images can freeze the foreground window for ~10 s); images with a long edge over 3000 px are **downscaled before going to the clipboard** (the disk file is still saved at the original size) to avoid dragging down the foreground app with a huge bitmap; the Ctrl+V keystroke is **injected step by step and waits for the foreground process to become idle**, so keys are not lost even while Word/WPS is busy handling clipboard notifications; after pasting, your original clipboard is restored only if it still holds what we put there — if you copied something new in the meantime, it is not overwritten; pasting is asynchronous — the phone first shows "Saved ✓ Pasting…", and the real result (success/failure/reason) is sent afterwards, never a premature "pasted";
 5. If pasting fails, the target is not an image, or "pause injection" is on, it automatically degrades to save-only — the file is not lost, and the phone shows the reason;
 6. **On the PC**: the tray menu has "Open received folder" and "Recent files" (open the most recent received file directly); the scan page also has an "Open received folder" button.
@@ -65,15 +65,15 @@ Tap **Photo → PC** on the phone to select multiple photos or take a photo on t
 - **Single session**: only one phone at a time; a new connection replaces the old one and explains why on the old page;
 - **Pause injection**: one click in the tray; the phone receives a clear message when sending;
 - **Autostart on boot**: supported on both versions (Windows tray menu; Kylin XDG autostart);
-- **Logs**: Windows `%LocalAppData%\TypeBridge\log.txt` (reachable from the tray), Kylin `~/.config/typebridge/log.txt`.
+- **Logs**: Windows `%LocalAppData%\AirType\log.txt` (reachable from the tray), Kylin `~/.config/airtype/log.txt`.
 
 ## How It Works
 
 ```
 Phone browser (mobile.html)                 PC
-  │   text/keys → JSON text frames          ├─ Windows: TypeBridge.exe (SendInput injection)
+  │   text/keys → JSON text frames          ├─ Windows: AirType.exe (SendInput injection)
   ├──────────── WebSocket :8765 ────────────┤
-  │   images → binary chunks (file protocol)└─ Kylin: typebridge.py (xdotool/dotool/clipboard injection)
+  │   images → binary chunks (file protocol)└─ Kylin: airtype.py (xdotool/dotool/clipboard injection)
 ```
 
 - **Zero dependencies**: the Windows version is a single C# 5 source file compiled with the system `csc.exe`; web resources are embedded into the exe as Win32 resources; the Kylin version uses only the Python 3 standard library; the WebSocket is a hand-written RFC6455 implementation (with fragmented-frame reassembly, compatible with the splitting behavior of WeChat's in-app browser engine).
@@ -90,7 +90,7 @@ Phone browser (mobile.html)                 PC
 build\build_stage1.bat
 ```
 
-Compiles with the system `csc.exe` (.NET Framework 4.x); output is `build\TypeBridge.exe`. Three hard constraints:
+Compiles with the system `csc.exe` (.NET Framework 4.x); output is `build\AirType.exe`. Three hard constraints:
 
 1. **C# 5 syntax only** (the system csc does not support newer syntax — not even string interpolation);
 2. **The source file must stay UTF-8 with BOM**, otherwise Chinese strings become garbled;
@@ -98,7 +98,7 @@ Compiles with the system `csc.exe` (.NET Framework 4.x); output is `build\TypeBr
 
 ### Kylin
 
-No compilation needed — run `python3 kylin/typebridge.py` directly; pages live under `kylin/web/`, so just refresh the browser after editing.
+No compilation needed — run `python3 kylin/airtype.py` directly; pages live under `kylin/web/`, so just refresh the browser after editing.
 
 ### Automated Regression Tests
 
@@ -112,18 +112,18 @@ No compilation needed — run `python3 kylin/typebridge.py` directly; pages live
 Recommended baseline workflow for development (Windows, PowerShell):
 
 ```powershell
-Stop-Process -Name TypeBridge -Force -ErrorAction SilentlyContinue   # 1. kill old instance
+Stop-Process -Name AirType -Force -ErrorAction SilentlyContinue   # 1. kill old instance
 & "build\build_stage1.bat"                                            # 2. rebuild
-Start-Process "build\TypeBridge.exe"                                  # 3. start new instance
+Start-Process "build\AirType.exe"                                  # 3. start new instance
 python spike\test_ws_pairing.py; python spike\test_sync.py            # 4. regression; exit code 0 = pass
 ```
 
 ## Directory Layout
 
 ```
-src/            Windows version: TypeBridge.cs (single file) + web/ (phone/scan-page resources)
-kylin/          Kylin version: typebridge.py + web/ + install.sh / run.sh + assets/
-build/          Build scripts and output (TypeBridge.exe)
+src/            Windows version: AirType.cs (single file) + web/ (phone/scan-page resources)
+kylin/          Kylin version: airtype.py + web/ + install.sh / run.sh + assets/
+build/          Build scripts and output (AirType.exe)
 spike/          Automated tests and historical verification scripts (_-prefixed files are temporary, not committed)
 ```
 
@@ -135,7 +135,7 @@ Check in order:
 2. On multi-NIC PCs (VPN/hotspot/virtual adapters are common), the QR may point to a NIC the phone can't reach: check the current address on the scan page and try another — the Windows tray's "Select NIC (scan address)" switches directly; Kylin uses `--ip` followed by a restart;
 3. Did Windows Firewall block inbound traffic? As admin PowerShell, allow it:
    ```powershell
-   New-NetFirewallRule -Name TypeBridge8765 -DisplayName "TypeBridge LAN input (TCP 8765)" -Direction Inbound -Protocol TCP -LocalPort 8765 -Action Allow -Profile Any
+   New-NetFirewallRule -Name AirType8765 -DisplayName "AirType LAN input (TCP 8765)" -Direction Inbound -Protocol TCP -LocalPort 8765 -Action Allow -Profile Any
    ```
    Note: firewall **Block rules take precedence over Allow rules** — if you clicked "Cancel" on a Windows allow popup before, the system auto-creates a block rule; you must delete it for the allow rule to take effect (`Get-NetFirewallApplicationFilter` can help find it);
 4. Still stuck: change the PC's network profile from "Public" to "Private".
@@ -144,7 +144,7 @@ Check in order:
 A new code is issued at every startup, so old QR codes/pages are immediately invalid. The phone page shows a code-entry box — just type the new 4-digit code displayed on the PC screen; no need to re-scan.
 
 **Photo transferred but not pasted into the app?**
-Pasting only happens into the window that is foreground at the exact moment the transfer completes — don't switch windows right after sending. The phone reports in two steps: first "Saved", then the real paste result; if pasting didn't happen it states the reason. If the target app doesn't recognize file references in the clipboard, it degrades to save-only — grab the file from `Downloads/TypeBridge接收` (tray "Recent files" or the scan page's "Open received folder" get you there). With "pause injection" on, it also saves only.
+Pasting only happens into the window that is foreground at the exact moment the transfer completes — don't switch windows right after sending. The phone reports in two steps: first "Saved", then the real paste result; if pasting didn't happen it states the reason. If the target app doesn't recognize file references in the clipboard, it degrades to save-only — grab the file from `Downloads/AirType接收` (tray "Recent files" or the scan page's "Open received folder" get you there). With "pause injection" on, it also saves only.
 
 **Phone shows "Injection failed"?**
 The PC-side injection channel has a problem (common on Kylin: permissions, session switching). Check the PC log; run `--selfcheck` on Kylin to re-check the channel, or `--test-inject` for a live test.

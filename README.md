@@ -1,3 +1,5 @@
+[简体中文](README.md) | [English](README.en.md)
+
 # TypeBridge 跨屏输入
 
 手机打字 / 语音 → 文字直接出现在电脑光标处;手机照片 → 自动粘贴进电脑当前输入框。

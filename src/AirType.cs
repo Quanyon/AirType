@@ -4,7 +4,7 @@
 // 语法：C# 5（系统自带 csc.exe 编译，禁用 C#6+ 语法）
 // 编译：build\build_stage1.bat （/target:winexe 纯托盘，无控制台窗口）
 // 运行：build\AirType.exe   双击即用：自动弹浏览器显示扫码二维码，
-//       右下角托盘常驻（右键：链接二维码 / 退出），日志写本地文件
+//       右下角托盘常驻（右键：打开AirType手机扫码连接页面 / 退出），日志写本地文件
 // 设计要点（对应方案 docs/跨屏输入工具-实施方案.md）：
 //   - TcpListener 裸 Socket（坑：HttpListener 绑局域网IP要管理员，见方案8.7）
 //   - 手写 RFC6455 WebSocket（SHA1 内置，零第三方库）
@@ -869,6 +869,46 @@ namespace AirType
         }
     }
 
+    // ---------------- 应用图标 ----------------
+    // 从内嵌的 airtype.ico 读取指定尺寸的图标帧，托盘(16)与扫码窗口(32)各取所需；
+    // 读取失败回退系统默认图标，保证任何情况下都有图标可用。
+    internal static class AppIcon
+    {
+        private static readonly Dictionary<int, System.Drawing.Icon> cache =
+            new Dictionary<int, System.Drawing.Icon>();
+        private static MemoryStream kept;   // Icon 依赖底层流，须全程保活不能释放
+
+        internal static System.Drawing.Icon Get(int size)
+        {
+            System.Drawing.Icon cached;
+            if (cache.TryGetValue(size, out cached)) return cached;
+            System.Drawing.Icon icon = null;
+            try
+            {
+                Assembly asm = Assembly.GetExecutingAssembly();
+                using (Stream s = asm.GetManifestResourceStream("AirTypeRes.airtype.ico"))
+                {
+                    if (s != null)
+                    {
+                        if (kept == null)
+                        {
+                            kept = new MemoryStream();
+                            byte[] buf = new byte[8192];
+                            int n;
+                            while ((n = s.Read(buf, 0, buf.Length)) > 0) kept.Write(buf, 0, n);
+                        }
+                        kept.Position = 0;
+                        icon = new System.Drawing.Icon(kept, new System.Drawing.Size(size, size));
+                    }
+                }
+            }
+            catch (Exception) { icon = null; }
+            if (icon == null) icon = System.Drawing.SystemIcons.Application;
+            cache[size] = icon;
+            return icon;
+        }
+    }
+
     // ---------------- TinyHttp：TcpListener 极简 HTTP + WS 路由 ----------------
     internal static class TinyHttp
     {
@@ -1709,6 +1749,7 @@ namespace AirType
         internal PairForm()
         {
             Text = "AirType 扫码连接";
+            Icon = AppIcon.Get(32);   // 标题栏/任务栏用应用 logo
             // 支持最大化/最小化：内嵌 WebBrowser 是 Dock.Fill，放大后二维码跟着变大
             FormBorderStyle = FormBorderStyle.Sizable;
             MaximizeBox = true;
@@ -1784,7 +1825,7 @@ namespace AirType
             statusItem.Enabled = false;
             menu.MenuItems.Add(statusItem);
             menu.Popup += delegate { RefreshStatusItem(); };
-            menu.MenuItems.Add("链接二维码", delegate { OpenPair(); });
+            menu.MenuItems.Add("打开AirType手机扫码连接页面", delegate { OpenPair(); });
             menu.MenuItems.Add("重新生成配对码", delegate
             {
                 Pairing.NewCode();
@@ -1875,7 +1916,7 @@ namespace AirType
             });
 
             tray = new NotifyIcon();
-            tray.Icon = System.Drawing.SystemIcons.Application;
+            tray.Icon = AppIcon.Get(16);
             tray.Text = "AirType 配对码 " + Pairing.Code;
             tray.ContextMenu = menu;
             tray.Visible = true;

@@ -16,18 +16,24 @@ if not exist "%CSC%" (
 
 if not exist build mkdir build
 
+rem Release the output exe if a previous instance is still running in the tray,
+rem otherwise csc cannot overwrite build\AirType.exe (file locked).
+taskkill /f /im AirType.exe >nul 2>&1
+
 rem NOTE: src\AirType.cs must be UTF-8 WITH BOM (csc reads BOM-less
 rem       UTF-8 as ANSI/GBK and corrupts Chinese string literals)
 
-rem AnyCPU：同一 exe 同时跑 32 位/64 位系统（Win7 有 32 位老机器），
-rem 代码 P/Invoke 已用 IntPtr 自适应位数。
+rem AnyCPU: one exe runs on both 32-bit and 64-bit systems (legacy Win7).
+rem P/Invoke signatures use IntPtr so they adapt to the process bitness.
 "%CSC%" /nologo /optimize+ /platform:anycpu /target:winexe ^
+  /win32icon:src\airtype.ico ^
   /r:System.dll /r:System.Core.dll /r:System.Drawing.dll ^
   /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll ^
   /res:src\web\index.html,AirTypeRes.index.html ^
   /res:src\web\pair.html,AirTypeRes.pair.html ^
   /res:src\web\mobile.html,AirTypeRes.mobile.html ^
   /res:src\web\qrcode.js,AirTypeRes.qrcode.js ^
+  /res:src\airtype.ico,AirTypeRes.airtype.ico ^
   /out:build\AirType.exe src\AirType.cs
 if errorlevel 1 (
   echo [ERROR] compile failed.

@@ -5,47 +5,116 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AirType 配对</title>
 <style>
-body{font-family:system-ui,sans-serif;max-width:640px;margin:32px auto;padding:0 20px;color:#222;line-height:1.7;text-align:center}
-h1{font-size:22px;margin-bottom:6px}
-.sub{color:#666;font-size:14px;margin-bottom:18px}
-#qrbox{display:inline-block;background:#fff;border:1px solid #d8d8d8;border-radius:12px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-canvas{display:block}
-#status{margin-top:14px;font-size:14px;color:#185fa5}
-#conn{margin-top:10px;font-size:15px;color:#888}
-#conn.on{color:#17672f}
-.cdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#bbb;margin-right:6px;vertical-align:middle}
-.cdot.on{background:#22ab5f}
-#fallback{margin-top:16px;font-size:13px;color:#666}
-#fallback code{background:#f2f2f2;padding:3px 8px;border-radius:4px;font-family:Consolas,monospace;word-break:break-all;display:inline-block;margin-top:6px}
-#ctrl{margin-top:14px}
-#ctrl button{font-size:13px;padding:6px 14px;margin:0 6px;border:1px solid #c9c9c9;border-radius:8px;background:#fafafa;color:#333;cursor:pointer}
-#ctrl button:hover{background:#f0f0f0}
-#ctrlmsg{font-size:13px;color:#888;margin-left:8px}
-.warn{background:#fff3f0;border:1px solid #f0b8ad;color:#a3341f;border-radius:8px;padding:12px 14px;font-size:13.5px;text-align:left;margin:0 0 18px;line-height:1.6}
-.warn code{background:#fff;padding:2px 6px;border-radius:4px;font-family:Consolas,monospace}
-.tip{color:#888;font-size:13px;margin-top:16px}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif;color:#17202e;line-height:1.6;background:#eef1f5;padding:32px 16px;min-height:100vh;display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-align-items:center;-ms-flex-align:center;align-items:center;-webkit-justify-content:center;-ms-flex-pack:center;justify-content:center}
+.card{width:100%;max-width:860px;display:-webkit-flex;display:-ms-flexbox;display:flex;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(16,32,60,.12)}
+
+/* 左侧：说明 */
+.side{-webkit-flex:0 0 300px;-ms-flex:0 0 300px;flex:0 0 300px;background:#0d1b33;color:#e8eefb;padding:34px 30px;display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-flex-direction:column;-ms-flex-direction:column;flex-direction:column}
+.brand{display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-align-items:center;-ms-flex-align:center;align-items:center}
+.brand svg{display:block;margin-right:12px}
+.brand span{font-size:18px;font-weight:600;letter-spacing:.3px}
+.side h1{font-size:26px;font-weight:700;line-height:1.3;margin:34px 0 8px;color:#fff}
+.side .sub{margin:0;font-size:13.5px;color:#9db0d0}
+.steps{list-style:none;margin:28px 0 0;padding:0;counter-reset:s}
+.steps li{position:relative;padding:0 0 18px 38px;font-size:14px;color:#d3ddf0;counter-increment:s}
+.steps li:before{content:counter(s);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;background:#1d3a6e;color:#8fb4ff;font-size:12.5px;font-weight:600;line-height:24px;text-align:center}
+.steps li:after{content:"";position:absolute;left:11.5px;top:30px;bottom:6px;width:1px;background:#27437a}
+.steps li:last-child{padding-bottom:0}
+.steps li:last-child:after{display:none}
+.steps b{color:#fff;font-weight:600}
+#conn{margin-top:auto;display:inline-block;-ms-flex-item-align:start;align-self:flex-start;padding:8px 16px;border-radius:999px;font-size:14px;color:#9db0d0;background:#16294a;border:1px solid #223a66}
+.side .push{-webkit-flex:1 1 0px;-ms-flex:1 1 0px;flex:1 1 0px;min-height:24px}
+.cdot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#5c7099;margin-right:8px;vertical-align:middle}
+#conn.on{color:#7ff0ac;background:#0f2f27;border-color:#1c5a44}
+.cdot.on{background:#34d27b;-webkit-animation:pulse 1.8s ease-out infinite;animation:pulse 1.8s ease-out infinite}
+@-webkit-keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,210,123,.55)}100%{box-shadow:0 0 0 9px rgba(52,210,123,0)}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,210,123,.55)}100%{box-shadow:0 0 0 9px rgba(52,210,123,0)}}
+
+/* 右侧：二维码 */
+.main{-webkit-flex:1 1 0px;-ms-flex:1 1 0px;flex:1 1 0px;min-width:0;padding:32px 34px 26px;text-align:center}
+.warn{background:#fff4f2;border:1px solid #f3c3b8;color:#a3341f;border-radius:12px;padding:12px 14px;font-size:13px;text-align:left;margin:0 0 18px;line-height:1.6}
+.warn code{background:#fff}
+.qrwrap{display:inline-block;padding:10px;border-radius:18px;border:2px solid #d6dfec;transition:border-color .3s ease}
+#qrbox{background:#fff;border-radius:10px;line-height:0}
+canvas{display:block;margin:0 auto;max-width:100%;height:auto}
+body.linked .qrwrap{border-color:#34d27b}
+#status{margin-top:12px;font-size:13.5px;color:#5b6b82;min-height:22px}
+
+.pair{margin:18px auto 0;max-width:340px;padding:12px 16px;border-radius:14px;background:#f3f6fb;display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-align-items:center;-ms-flex-align:center;align-items:center;-webkit-justify-content:space-between;-ms-flex-pack:justify;justify-content:space-between}
+.pair .k{font-size:13px;color:#6b7a90}
+.pair b{font-size:28px;font-weight:700;letter-spacing:6px;color:#1d4fd8;font-family:Consolas,"Courier New",monospace;-webkit-user-select:all;-ms-user-select:all;user-select:all}
+
+.info{margin:16px 0 0;text-align:left;font-size:12.5px;color:#6b7a90;line-height:1.7}
+.info .row{margin:6px 0;word-break:break-all}
+.info b{color:#33445c;font-weight:600}
+code{background:#eef2f8;color:#2f4a78;padding:2px 7px;border-radius:5px;font-family:Consolas,"Courier New",monospace;font-size:12px;word-break:break-all;-webkit-user-select:all;-ms-user-select:all;user-select:all}
+
+#ctrl{margin-top:18px;padding-top:16px;border-top:1px solid #e8edf4}
+#ctrl button{font-family:inherit;font-size:13px;padding:8px 14px;margin:4px 4px;border:1px solid #d3dbe8;border-radius:9px;background:#fff;color:#33445c;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease}
+#ctrl button:hover{background:#eef4ff;border-color:#a9c2f0;color:#1d4fd8}
+#ctrl button:focus{outline:2px solid #7aa2f5;outline-offset:2px}
+#ctrl button:active{-webkit-transform:translateY(1px);transform:translateY(1px)}
+#ctrl button:disabled{opacity:.5;cursor:default}
+#ctrlmsg{display:block;font-size:12.5px;color:#6b7a90;margin-top:6px;min-height:18px}
+
+@media (max-width:720px){
+  body{display:block;padding:16px 12px}
+  .card{display:block;border-radius:16px}
+  .side{padding:26px 22px}
+  .side h1{margin-top:22px;font-size:22px}
+  .steps{margin-top:20px}
+  #conn{margin-top:20px}
+  .main{padding:24px 18px 20px}
+}
 </style>
 </head>
 <body>
-<h1>手机扫码连接</h1>
-<div class="sub">用手机（与电脑同一 WiFi）的微信「扫一扫」或系统相机扫码</div>
-<!--WARN-->
-<div id="qrbox"><canvas id="qr"></canvas></div>
-<div id="status">正在生成二维码…</div>
-<div id="conn"><span id="conndot" class="cdot"></span><span id="conntxt">正在检查连接状态…</span></div>
-<div class="tip" id="addr">电脑当前地址：<b>{{IP}}:{{PORT}}</b>（手机须与电脑连同一个 WiFi/局域网；手机连不上时，多半是这块网卡不对，可在电脑上切换扫码网卡）</div>
-<div id="ctrl">
-  <button id="btndisc" title="立刻断开当前手机；手机需重新输码才能连回">断开当前手机</button>
-  <button id="btnrecode" title="换新的配对码并吊销旧会话；旧设备不重新拿码就连不上">重新配对</button>
-  <button id="btnfolder" title="打开电脑上存放接收图片的文件夹">打开接收文件夹</button>
-  <span id="ctrlmsg"></span>
+<div class="card">
+  <div class="side">
+    <div class="brand">
+      <svg width="40" height="40" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="atg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs>
+        <rect x="3" y="3" width="94" height="94" rx="22" fill="url(#atg)"/>
+        <g fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round"><path d="M60 26 a16 16 0 0 1 16 16"/><path d="M60 26 a30 30 0 0 1 30 30" opacity="0.55"/></g>
+        <circle cx="58" cy="24" r="3.6" fill="#ffffff"/>
+        <rect x="20" y="46" width="60" height="34" rx="8" fill="#ffffff"/>
+        <g fill="#2f6fe6"><rect x="26" y="52" width="11" height="7" rx="2"/><rect x="44.5" y="52" width="11" height="7" rx="2"/><rect x="63" y="52" width="11" height="7" rx="2"/><rect x="26" y="62" width="11" height="7" rx="2"/><rect x="44.5" y="62" width="11" height="7" rx="2"/><rect x="63" y="62" width="11" height="7" rx="2"/><rect x="28" y="71" width="44" height="5" rx="2.5"/></g>
+      </svg>
+      <span>AirType</span>
+    </div>
+    <h1>手机扫码连接</h1>
+    <p class="sub">手机当键盘，文字直接打到电脑光标处</p>
+    <ol class="steps">
+      <li>让手机和电脑连<b>同一个 WiFi</b></li>
+      <li>用微信「扫一扫」或系统相机<b>扫描右侧二维码</b></li>
+      <li>状态变为<b>已连接</b>后，在手机上打字或说话即可</li>
+    </ol>
+    <div class="push"></div>
+    <div id="conn"><span id="conndot" class="cdot"></span><span id="conntxt">正在检查连接状态…</span></div>
+  </div>
+
+  <div class="main">
+    <!--WARN-->
+    <div class="qrwrap"><div id="qrbox"><canvas id="qr"></canvas></div></div>
+    <div id="status">正在生成二维码…</div>
+
+    <div class="pair"><span class="k">配对码</span><b>{{CODE}}</b></div>
+
+    <div class="info">
+      <div class="row" id="fallback"><b>扫码不成功？</b>在手机浏览器地址栏输入 <code>{{URL}}</code>，再输入上方配对码即可连接。</div>
+      <div class="row" id="addr"><b>电脑当前地址：</b>{{IP}}:{{PORT}}。手机连不上时，多半是网卡选错了，可在电脑上切换扫码网卡。</div>
+    </div>
+
+    <div id="ctrl">
+      <button id="btndisc" title="立刻断开当前手机；手机需重新输码才能连回">断开当前手机</button>
+      <button id="btnrecode" title="换新的配对码并吊销旧会话；旧设备不重新拿码就连不上">重新配对</button>
+      <button id="btnfolder" title="打开电脑上存放接收图片的文件夹">打开接收文件夹</button>
+      <span id="ctrlmsg"></span>
+    </div>
+  </div>
 </div>
-<div id="fallback">
-  扫码不成功？在手机浏览器地址栏输入：<br>
-  <code>{{URL}}</code>
-</div>
-<div class="tip">配对码：<b>{{CODE}}</b> · 手机端也可以打开上面地址后，直接输入配对码连接</div>
-<div class="tip">打开后页面出现绿点「已连接」，即可在手机上打字或说话，文字直达电脑光标处。</div>
 <script src="/qrcode.js"></script>
 <script>
 var PAIR_URL = "{{URL}}";
@@ -56,8 +125,8 @@ var PAIR_URL = "{{URL}}";
     qr.addData(PAIR_URL);
     qr.make();
     var count = qr.getModuleCount();
-    var scale = Math.max(4, Math.floor(280 / count));
-    var border = 4;
+    var scale = Math.max(4, Math.floor(260 / count));
+    var border = 2;
     var size = (count + border * 2) * scale;
     var canvas = document.getElementById('qr');
     canvas.width = size;
@@ -65,7 +134,7 @@ var PAIR_URL = "{{URL}}";
     var ctx = canvas.getContext('2d');
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = '#0d1b33';
     for (var row = 0; row < count; row++) {
       for (var col = 0; col < count; col++) {
         if (qr.isDark(row, col)) {
@@ -99,10 +168,12 @@ var PAIR_URL = "{{URL}}";
         dot.className = 'cdot on';
         txt.textContent = '手机已连接，可以开始输入';
         conn.className = 'on';
+        document.body.className = 'linked';
       } else {
         dot.className = 'cdot';
         txt.textContent = '等待手机连接…';
         conn.className = '';
+        document.body.className = '';
       }
     };
     x.send();

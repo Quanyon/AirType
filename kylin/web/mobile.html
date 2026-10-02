@@ -2,50 +2,73 @@
 <html lang="zh">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d1626">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>AirType</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
-body{font-family:system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;height:100dvh;background:#0a0a0a;color:#eaeaea}
-#top{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#161616;border-bottom:1px solid #2a2a2a}
-#dot{width:10px;height:10px;border-radius:50%;background:#555;flex-shrink:0}
-#dot.on{background:#22ab5f}
-#dot.off{background:#d9483b}
-#status{font-size:14px;color:#bbb}
-#fg{font-size:12px;color:#9a9a9a;padding:6px 16px;background:#101010;border-bottom:1px solid #242424;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#box{flex:1;margin:12px 16px;padding:14px;font-size:17px;line-height:1.5;border:1px solid #3a3a3a;border-radius:10px;resize:none;background:#161616;color:#eee}
-#box:focus{outline:none;border-color:#378add}
-#sendrow{display:flex;gap:10px;margin:0 16px 10px}
-#mode{flex:0 0 42%;padding:16px 34px 16px 12px;font-size:15px;color:#ddd;background-color:#1e1e1e;border:1px solid #3a3a3a;border-radius:10px;cursor:pointer;
-  -webkit-appearance:none;appearance:none;
-  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23aaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 12px center}
-#send{flex:1;padding:16px;font-size:18px;font-weight:500;color:#fff;background:#185fa5;border:none;border-radius:10px;cursor:pointer}
-#send:active{background:#0c447c}
+body{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;display:flex;flex-direction:column;height:100dvh;background:#0a0f1a;color:#e6edf8;padding-top:env(safe-area-inset-top)}
+button,select,input,textarea{font-family:inherit}
+
+/* 顶部：连接状态 + 电脑当前目标 */
+#hd{padding:12px 18px 10px;background:#0d1626;border-bottom:1px solid #1b2a45}
+#top{display:flex;align-items:center;gap:10px}
+#dot{width:10px;height:10px;border-radius:50%;background:#55627a;flex-shrink:0}
+#dot.on{background:#34d27b;box-shadow:0 0 0 4px rgba(52,210,123,.18)}
+#dot.off{background:#e5594b}
+#status{font-size:15px;font-weight:600;color:#c3cfe4;line-height:1.4}
+#dot.on+#status{color:#6ee7a1}
+#fg{margin-top:3px;padding-left:20px;font-size:12.5px;color:#7f90ad;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 输入框 */
+#box{flex:1;min-height:120px;margin:14px 16px 12px;padding:16px;font-size:17px;line-height:1.55;border:1px solid #223250;border-radius:16px;resize:none;background:#111b2e;color:#f1f5fc}
+#box::placeholder{color:#7486a6}
+#box:focus{outline:none;border-color:#3b82f6}
+
+/* 手动/实时 切换 + 发送 */
+#sendrow{display:flex;gap:10px;margin:0 16px 10px;height:54px}
+#mode{display:none}
+#seg{display:flex;flex:1;padding:4px;background:#111b2e;border:1px solid #223250;border-radius:14px}
+#seg button{flex:1;border:none;background:transparent;color:#8a9bb8;font-size:15px;border-radius:10px;cursor:pointer}
+#seg button.on{background:#22385f;color:#fff;font-weight:600}
+#send{flex:0 0 38%;font-size:18px;font-weight:600;letter-spacing:2px;color:#fff;background:#2f6df0;border:none;border-radius:14px;cursor:pointer}
+#send:active{background:#2456c4}
+#send.live{background:#2a3f66}
 #send.sent{background:#22ab5f}
-#send.live{background:#22ab5f}
-#autoclear{flex:0 0 auto;padding:16px 10px;font-size:13px;color:#ddd;background:#1e1e1e;border:1px solid #3a3a3a;border-radius:10px;cursor:pointer;white-space:nowrap}
-#autoclear:active{background:#2a2a2a}
-#autoclear.on{background:#22ab5f;color:#fff;border-color:#22ab5f}
-#orig{flex:0.7!important}
-#orig.on{background:#22ab5f;color:#fff;border-color:#22ab5f}
-#ps{flex:0.7!important}
-#ps.on{background:#22ab5f;color:#fff;border-color:#22ab5f}
-#row{display:flex;gap:10px;margin:0 16px calc(12px + env(safe-area-inset-bottom))}
-#row button{flex:1;padding:14px 0;font-size:15px;color:#ddd;background:#1e1e1e;border:1px solid #3a3a3a;border-radius:10px;cursor:pointer}
-#row button:active{background:#2a2a2a}
-#coderow{display:flex;gap:10px;margin:0 16px 10px}
-#codeinput{flex:1;min-width:0;padding:12px;font-size:15px;border:1px solid #3a3a3a;border-radius:10px;background:#1e1e1e;color:#eee}
-#codego{padding:12px 18px;font-size:15px;font-weight:500;color:#fff;background:#185fa5;border:none;border-radius:10px;cursor:pointer}
-#codego:active{background:#0c447c}
-#hint{font-size:12px;color:#8a8a8a;text-align:center;padding:0 16px 8px;line-height:1.5}
+
+/* 开关类选项：小胶囊 */
+#chips{display:flex;gap:8px;margin:0 16px 10px}
+#autoclear,#orig,#ps{min-height:42px;padding:0 18px;font-size:14px;color:#8a9bb8;background:#111b2e;border:1px solid #223250;border-radius:999px;cursor:pointer;white-space:nowrap}
+#autoclear:before,#orig:before,#ps:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#3a4a68;margin-right:7px;vertical-align:middle}
+#autoclear.on,#orig.on,#ps.on{color:#6ee7a1;background:rgba(52,210,123,.12);border-color:#1f6b4a}
+#autoclear.on:before,#orig.on:before,#ps.on:before{background:#34d27b}
+#autoclear{display:none}
+body.live #autoclear{display:inline-block}
+
+/* 动作键 */
+#row{display:flex;gap:10px;margin:0 16px 6px}
+#row button{flex:1;height:52px;font-size:15px;color:#dbe5f6;background:#16233b;border:1px solid #223250;border-radius:14px;cursor:pointer}
+#row button#plus{flex:1.7}
+#row button:active{background:#1f3254}
+
+/* 输码连接 */
+#coderow{display:flex;gap:10px;margin:12px 16px 0}
+#codeinput{flex:1;min-width:0;padding:13px 14px;font-size:16px;border:1px solid #223250;border-radius:12px;background:#111b2e;color:#eee}
+#codeinput:focus{outline:none;border-color:#3b82f6}
+#codego{padding:12px 20px;font-size:15px;font-weight:600;color:#fff;background:#2f6df0;border:none;border-radius:12px;cursor:pointer}
+#codego:active{background:#2456c4}
+
+#hint{font-size:12.5px;color:#9aabc7;text-align:center;padding:2px 18px calc(10px + env(safe-area-inset-bottom));line-height:1.5}
 </style>
 </head>
 <body>
+<div id="hd">
 <div id="top"><span id="dot" class="off"></span><span id="status">连接中…</span></div>
-<div id="fg">目标：-</div>
+<div id="fg">目标：等待电脑响应…</div>
+</div>
 <div id="coderow" style="display:none">
 <input id="codeinput" placeholder="输入电脑上的配对码（4 位数字）" inputmode="numeric" autocomplete="off">
 <button id="codego">连 接</button>
@@ -56,16 +79,19 @@ body{font-family:system-ui,-apple-system,sans-serif;display:flex;flex-direction:
 <option value="manual">手动发送</option>
 <option value="live">实时同步</option>
 </select>
-<button id="autoclear" title="开启后，实时同步停顿 2.5 秒自动清空输入框；关闭时用「清空」按钮手动清">自动清空</button>
+<div id="seg"><button type="button" data-v="manual" class="on">手动发送</button><button type="button" data-v="live">实时同步</button></div>
 <button id="send">发 送</button>
+</div>
+<div id="chips">
+<button id="autoclear" title="开启后，实时同步停顿 2.5 秒自动清空输入框；关闭时用「清空」按钮手动清">自动清空</button>
+<button id="orig" title="开启后按原图发送，不做压缩">原图</button>
+<button id="ps" title="省电模式：加大实时同步发送间隔，减少 Wi-Fi 唤醒，更省电但上屏稍慢">省电</button>
 </div>
 <div id="row">
 <button id="enter">回车</button>
 <button id="undo">撤回</button>
 <button id="bs">退格</button>
 <button id="plus" title="选一张照片/拍照发到电脑，自动粘贴到电脑当前光标处；上传中再点一次=取消">图片→电脑</button>
-<button id="orig" title="开启后按原图发送，不做压缩">原图</button>
-<button id="ps" title="省电模式：加大实时同步发送间隔，减少 Wi-Fi 唤醒，更省电但上屏稍慢">省电</button>
 <input type="file" id="file" accept="image/*" style="display:none">
 </div>
 <div id="hint">发送后文字出现在电脑光标处 · 撤回=删掉上一次发送的内容</div>
@@ -222,6 +248,8 @@ function scheduleSync(){
 
 function setMode(v){
   mode=v;
+  document.body.className=(v==='live')?'live':'';
+  syncSeg();
   if(mode==='live'){
     lastSent=box.value;
     send.textContent='清空';
@@ -242,6 +270,19 @@ function setMode(v){
 }
 
 modeSel.onchange=function(){ setMode(modeSel.value); };
+var segBtns=document.getElementById('seg').getElementsByTagName('button');
+function syncSeg(){
+  for(var i=0;i<segBtns.length;i++){
+    segBtns[i].classList.toggle('on',segBtns[i].getAttribute('data-v')===mode);
+  }
+}
+for(var si=0;si<segBtns.length;si++){
+  segBtns[si].onclick=function(){
+    var v=this.getAttribute('data-v');
+    modeSel.value=v;setMode(v);
+  };
+}
+function syncNow(){ flushSync(); }
 
 // 图片→电脑：一次一张 + 大图智能压缩 + 进度/取消/失败重试；元数据 + 256KB 二进制分块 + file_end
 var MAX_FILE=200*1024*1024;

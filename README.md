@@ -11,7 +11,7 @@
 
 | 手机端输入页 | 电脑端扫码连接页 |
 |:---:|:---:|
-| <img src="screenshots/mobile.jpg" width="280" alt="手机端页面截图"> | <img src="screenshots/pc-pair.png" width="560" alt="PC 端连接页面截图"> |
+| <img src="https://raw.githubusercontent.com/Quanyon/AirType/main/screenshots/mobile.jpg" width="280" alt="手机端页面截图"> | <img src="https://raw.githubusercontent.com/Quanyon/AirType/main/screenshots/pc-pair.png" width="560" alt="PC 端连接页面截图"> |
 
 
 ## 快速开始

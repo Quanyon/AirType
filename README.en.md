@@ -10,7 +10,7 @@ Pure LAN communication: **zero install on the phone** (any browser), **zero thir
 
 | Phone input page | PC scan-to-connect page |
 |:---:|:---:|
-| <img src="screenshots/mobile.jpg" width="280" alt="Phone app screenshot"> | <img src="screenshots/pc-pair.png" width="560" alt="PC connection page screenshot"> |
+| <img src="https://raw.githubusercontent.com/Quanyon/AirType/main/screenshots/mobile.jpg" width="280" alt="Phone app screenshot"> | <img src="https://raw.githubusercontent.com/Quanyon/AirType/main/screenshots/pc-pair.png" width="560" alt="PC connection page screenshot"> |
 
 
 ## Quick Start

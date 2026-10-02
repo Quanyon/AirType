@@ -7,6 +7,13 @@
 纯局域网通信:手机侧零安装(浏览器即用),电脑侧零第三方依赖。
 
 
+## 应用截图
+
+| 手机端输入页 | 电脑端扫码连接页 |
+|:---:|:---:|
+| <img src="screenshots/mobile.jpg" width="280" alt="手机端页面截图"> | <img src="screenshots/pc-pair.png" width="560" alt="PC 端连接页面截图"> |
+
+
 ## 快速开始
 
 ### Windows
@@ -86,6 +93,7 @@ python3 kylin/airtype.py     # 或直接运行,浏览器打开 http://localhost:
 src/     Windows 版:AirType.cs(单文件)+ airtype.ico + web/(手机端 / 扫码页资源)
 kylin/   麒麟版:airtype.py + web/ + install.sh / run.sh + assets/
 build/   编译脚本 build_stage1.bat 与产物 AirType.exe
+screenshots/ 项目应用截图(手机端 / 电脑端扫码页)
 ```
 
 ## 常见问题

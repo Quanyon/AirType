@@ -6,6 +6,13 @@ Type or dictate on your phone → text appears right at the cursor on your PC; s
 Pure LAN communication: **zero install on the phone** (any browser), **zero third-party dependencies on the PC**.
 
 
+## Screenshots
+
+| Phone input page | PC scan-to-connect page |
+|:---:|:---:|
+| <img src="screenshots/mobile.jpg" width="280" alt="Phone app screenshot"> | <img src="screenshots/pc-pair.png" width="560" alt="PC connection page screenshot"> |
+
+
 ## Quick Start
 
 ### Windows
@@ -85,6 +92,7 @@ Phone browser (mobile.html)                PC
 src/     Windows version: AirType.cs (single file) + airtype.ico + web/ (phone/scan-page resources)
 kylin/   Kylin version: airtype.py + web/ + install.sh / run.sh + assets/
 build/   build_stage1.bat and the output AirType.exe
+screenshots/  App screenshots (phone input page / PC scan page)
 ```
 
 ## FAQ
